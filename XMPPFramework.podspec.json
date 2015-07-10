@@ -52,10 +52,10 @@
 
         ],
         "CocoaLumberjack": [
-          "~>1.6.2"
+          "~>1.9"
         ],
         "CocoaAsyncSocket": [
-          "~>7.3.1"
+          "~>7.4"
         ]
       },
       "ios": {
@@ -70,36 +70,28 @@
       "name": "Authentication",
       "source_files": "Authentication/**/*.{h,m}",
       "dependencies": {
-        "XMPPFramework/Core": [
 
-        ]
       }
     },
     {
       "name": "Categories",
       "source_files": "Categories/**/*.{h,m}",
       "dependencies": {
-        "XMPPFramework/Core": [
 
-        ]
       }
     },
     {
       "name": "Utilities",
       "source_files": "Utilities/**/*.{h,m}",
       "dependencies": {
-        "XMPPFramework/Core": [
 
-        ]
       }
     },
     {
       "name": "KissXML",
       "source_files": "Vendor/KissXML/**/*.{h,m}",
       "dependencies": {
-        "XMPPFramework/Core": [
 
-        ]
       }
     },
     {
@@ -360,9 +352,6 @@
       "source_files": "Extensions/XEP-0153/**/*.{h,m}",
       "dependencies": {
         "XMPPFramework/Core": [
-
-        ],
-        "XMPPFramework/XEP-0054": [
 
         ]
       },
