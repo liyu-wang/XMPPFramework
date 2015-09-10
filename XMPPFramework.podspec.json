@@ -1,36 +1,47 @@
 {
   "name": "XMPPFramework",
-  "version": "3.6.4",
+  "version": "3.6.5",
   "platforms": {
-    "ios": "5.0",
-    "osx": "10.7"
+    "ios": "6.0"
+  },
+  "ios": {
+    "frameworks": [
+      "UIKit",
+      "Foundation"
+    ]
+  },
+  "osx": {
+    "frameworks": "Cocoa"
   },
   "license": {
     "type": "BSD",
     "file": "copying.txt"
   },
   "summary": "An XMPP Framework in Objective-C for the Mac / iOS development community.",
-  "homepage": "https://github.com/robbiehanson/XMPPFramework",
+  "homepage": "https://github.com/processOne/XMPPFramework",
   "authors": {
     "Robbie Hanson": "robbiehanson@deusty.com"
   },
   "source": {
-    "git": "https://github.com/robbiehanson/XMPPFramework.git",
-    "tag": "3.6.4"
+    "git": "https://github.com/processOne/XMPPFramework.git",
+    "tag": "3.6.5"
   },
   "resources": [
     "**/*.{xcdatamodel,xcdatamodeld}"
   ],
-  "description": "XMPPFramework provides a core implementation of RFC-3920 (the xmpp standard), along with\n                  the tools needed to read & write XML. It comes with multiple popular extensions (XEPs),\n                  all built atop a modular architecture, allowing you to plug-in any code needed for the job.\n                  Additionally the framework is massively parallel and thread-safe. Structured using GCD,\n                  this framework performs well regardless of whether it's being run on an old iPhone, or\n                  on a 12-core Mac Pro. (And it won't block the main thread... at all).",
+  "description": "XMPPFramework provides a core implementation of RFC-3920 (the xmpp standard), along with\nthe tools needed to read & write XML. It comes with multiple popular extensions (XEPs),\nall built atop a modular architecture, allowing you to plug-in any code needed for the job.\nAdditionally the framework is massively parallel and thread-safe. Structured using GCD,\nthis framework performs    well regardless of whether it's being run on an old iPhone, or\non a 12-core Mac Pro. (And it won't block the main thread... at all).",
   "requires_arc": true,
-  "prepare_command": "    echo '#import \"XMPP.h\"' > XMPPFramework.h\n    grep '#define _XMPP_' -r Extensions \\\n    | tr '-' '_' \\\n    | perl -pe 's/Extensions\\/([A-z0-9_]*)\\/([A-z]*.h).*/\\n#ifdef HAVE_XMPP_SUBSPEC_\\U\\1\\n\\E#import \"\\2\"\\n#endif/' \\\n    >> XMPPFramework.h\n",
+  "prepare_command": "cat > \"module.map\" << MAP\nmodule libxml [system] {\nheader \"$(SDKROOT)/usr/include/libxml2\"\nlink \"libxml\"\nexport *\n}\nMAP",
   "subspecs": [
     {
       "name": "Core",
       "source_files": [
         "XMPPFramework.h",
         "Core/**/*.{h,m}",
-        "Vendor/libidn/*.h"
+        "Vendor/libidn/*.h",
+        "Authentication/**/*.{h,m}",
+        "Categories/**/*.{h,m}",
+        "Utilities/**/*.{h,m}"
       ],
       "vendored_libraries": "Vendor/libidn/libidn.a",
       "libraries": [
@@ -39,23 +50,16 @@
       ],
       "xcconfig": {
         "HEADER_SEARCH_PATHS": "$(SDKROOT)/usr/include/libxml2 $(SDKROOT)/usr/include/libresolv",
-        "LIBRARY_SEARCH_PATHS": "\"$(PODS_ROOT)/XMPPFramework/Vendor/libidn\""
+        "LIBRARY_SEARCH_PATHS": "\"$(PODS_ROOT)/XMPPFramework/Vendor/libidn\"",
+        "OTHER_LDFLAGS": "\"-lxml2\"",
+        "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES": "YES"
       },
       "dependencies": {
-        "XMPPFramework/Authentication": [
-
-        ],
-        "XMPPFramework/Categories": [
-
-        ],
-        "XMPPFramework/Utilities": [
-
-        ],
         "CocoaLumberjack": [
           "~>1.9"
         ],
         "CocoaAsyncSocket": [
-          "~>7.4"
+          "~>7.4.1"
         ]
       },
       "ios": {
@@ -68,30 +72,38 @@
     },
     {
       "name": "Authentication",
-      "source_files": "Authentication/**/*.{h,m}",
       "dependencies": {
+        "XMPPFramework/Core": [
 
+        ]
       }
     },
     {
       "name": "Categories",
-      "source_files": "Categories/**/*.{h,m}",
       "dependencies": {
+        "XMPPFramework/Core": [
 
+        ]
       }
     },
     {
       "name": "Utilities",
-      "source_files": "Utilities/**/*.{h,m}",
       "dependencies": {
+        "XMPPFramework/Core": [
 
+        ]
       }
     },
     {
       "name": "KissXML",
       "source_files": "Vendor/KissXML/**/*.{h,m}",
-      "dependencies": {
-
+      "libraries": [
+        "xml2",
+        "resolv"
+      ],
+      "xcconfig": {
+        "HEADER_SEARCH_PATHS": "$(SDKROOT)/usr/include/libxml2 $(SDKROOT)/usr/include/libresolv",
+        "OTHER_LDFLAGS": "\"-lxml2\""
       }
     },
     {
@@ -102,17 +114,20 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_BANDWIDTHMONITOR"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "CoreDataStorage",
-      "source_files": "Extensions/CoreDataStorage/**/*.{h,m}",
+      "source_files": [
+        "Extensions/CoreDataStorage/**/*.{h,m}",
+        "Extensions/XEP-0203/NSXMLElement+XEP_0203.h"
+      ],
       "dependencies": {
         "XMPPFramework/Core": [
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_COREDATASTORAGE",
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD",
       "frameworks": "CoreData"
     },
     {
@@ -123,7 +138,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_GOOGLESHAREDSTATUS"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "ProcessOne",
@@ -133,7 +148,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_PROCESSONE"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "Reconnect",
@@ -143,7 +158,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_RECONNECT",
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD",
       "frameworks": "SystemConfiguration"
     },
     {
@@ -155,22 +170,22 @@
         ],
         "XMPPFramework/CoreDataStorage": [
 
-        ],
-        "XMPPFramework/XEP-0203": [
-
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_ROSTER"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "SystemInputActivityMonitor",
-      "source_files": "Extensions/SystemInputActivityMonitor/**/*.{h,m}",
+      "source_files": [
+        "Extensions/SystemInputActivityMonitor/**/*.{h,m}",
+        "Utilities/GCDMulticastDelegate.h"
+      ],
       "dependencies": {
         "XMPPFramework/Core": [
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_SYSTEMINPUTACTIVITYMONITOR"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0009",
@@ -180,7 +195,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0009"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0012",
@@ -190,7 +205,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0012"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0016",
@@ -200,7 +215,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0016"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0045",
@@ -216,23 +231,25 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0045"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0054",
-      "source_files": "Extensions/XEP-0054/**/*.{h,m}",
+      "source_files": [
+        "Extensions/XEP-0054/**/*.{h,m}",
+        "Extensions/XEP-0153/XMPPvCardAvatarModule.h",
+        "Extensions/XEP-0082/XMPPDateTimeProfiles.h",
+        "Extensions/XEP-0082/NSDate+XMPPDateTimeProfiles.h"
+      ],
       "dependencies": {
         "XMPPFramework/Core": [
 
         ],
         "XMPPFramework/Roster": [
 
-        ],
-        "XMPPFramework/XEP-0153": [
-
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0054",
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD",
       "frameworks": "CoreLocation"
     },
     {
@@ -243,7 +260,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0059"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0060",
@@ -253,7 +270,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0060"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0065",
@@ -263,7 +280,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0065"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0066",
@@ -273,7 +290,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0066"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0082",
@@ -283,7 +300,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0082"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0085",
@@ -293,7 +310,17 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0085"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
+    },
+    {
+      "name": "XEP-0092",
+      "source_files": "Extensions/XEP-0092/**/*.{h,m}",
+      "dependencies": {
+        "XMPPFramework/Core": [
+
+        ]
+      },
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0100",
@@ -303,7 +330,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0100"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0106",
@@ -313,7 +340,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0106"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0115",
@@ -326,15 +353,12 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0115"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0136",
       "source_files": "Extensions/XEP-0136/**/*.{h,m}",
       "dependencies": {
-        "XMPPFramework/Core": [
-
-        ],
         "XMPPFramework/CoreDataStorage": [
 
         ],
@@ -345,17 +369,23 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0136"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0153",
-      "source_files": "Extensions/XEP-0153/**/*.{h,m}",
+      "source_files": [
+        "Extensions/XEP-0153/**/*.{h,m}",
+        "Extensions/XEP-0082/NSDate+XMPPDateTimeProfiles.h"
+      ],
       "dependencies": {
         "XMPPFramework/Core": [
 
+        ],
+        "XMPPFramework/XEP-0054": [
+
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0153"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0172",
@@ -365,7 +395,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0172"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0184",
@@ -375,7 +405,27 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0184"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
+    },
+    {
+      "name": "XEP-0191",
+      "source_files": "Extensions/XEP-0191/**/*.{h,m}",
+      "dependencies": {
+        "XMPPFramework/Core": [
+
+        ]
+      },
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
+    },
+    {
+      "name": "XEP-0198",
+      "source_files": "Extensions/XEP-0198/**/*.{h,m}",
+      "dependencies": {
+        "XMPPFramework/Core": [
+
+        ]
+      },
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0199",
@@ -385,7 +435,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0199"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0202",
@@ -398,7 +448,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0202"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0203",
@@ -411,7 +461,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0203"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0223",
@@ -421,7 +471,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0223"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0224",
@@ -431,21 +481,27 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0224"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0280",
-      "source_files": "Extensions/XEP-0280/**/*.{h,m}",
+      "source_files": [
+        "Extensions/XEP-0280/**/*.{h,m}",
+        "Extensions/XEP-0297/NSXMLElement+XEP_0297.h"
+      ],
       "dependencies": {
         "XMPPFramework/Core": [
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0280"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0297",
-      "source_files": "Extensions/XEP-0297/**/*.{h,m}",
+      "source_files": [
+        "Extensions/XEP-0297/**/*.{h,m}",
+        "Extensions/XEP-0203/**/*.h"
+      ],
       "dependencies": {
         "XMPPFramework/Core": [
 
@@ -454,7 +510,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0297"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0308",
@@ -464,7 +520,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0308"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0333",
@@ -474,7 +530,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0333"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     },
     {
       "name": "XEP-0335",
@@ -484,7 +540,7 @@
 
         ]
       },
-      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_XEP_0335"
+      "prefix_header_contents": "#define HAVE_XMPP_SUBSPEC_POD"
     }
   ]
 }
