@@ -1,0 +1,5 @@
+module libxml [system] {
+header "/usr/include/libxml2"
+link "libxml"
+export *
+}
