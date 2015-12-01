@@ -1,6 +1,6 @@
 {
   "name": "XMPPFramework",
-  "version": "3.6.5",
+  "version": "3.6.6",
   "platforms": {
     "ios": "6.0"
   },
@@ -24,14 +24,15 @@
   },
   "source": {
     "git": "https://github.com/processOne/XMPPFramework.git",
-    "tag": "3.6.5"
+    "tag": "3.6.6"
   },
   "resources": [
     "**/*.{xcdatamodel,xcdatamodeld}"
   ],
   "description": "XMPPFramework provides a core implementation of RFC-3920 (the xmpp standard), along with\nthe tools needed to read & write XML. It comes with multiple popular extensions (XEPs),\nall built atop a modular architecture, allowing you to plug-in any code needed for the job.\nAdditionally the framework is massively parallel and thread-safe. Structured using GCD,\nthis framework performs    well regardless of whether it's being run on an old iPhone, or\non a 12-core Mac Pro. (And it won't block the main thread... at all).",
   "requires_arc": true,
-  "prepare_command": "cat > \"module.map\" << MAP\nmodule libxml [system] {\nheader \"$(SDKROOT)/usr/include/libxml2\"\nlink \"libxml\"\nexport *\n}\nMAP",
+  "prepare_command": "echo '#import \"XMPP.h\"' > XMPPFramework.h\ngrep '#define _XMPP_' -r /Extensions \\\n| tr '-' '_' \\\n| perl -pe 's/Extensions\\/([A-z0-9_]*)\\/([A-z]*.h).*/\\n#ifdef HAVE_XMPP_SUBSPEC_\\U\\1\\n\\E#import \"\\2\"\\n#endif/' \\\n>> XMPPFramework.h",
+  "preserve_paths": "module/module.modulemap",
   "subspecs": [
     {
       "name": "Core",
@@ -49,10 +50,11 @@
         "resolv"
       ],
       "xcconfig": {
-        "HEADER_SEARCH_PATHS": "$(SDKROOT)/usr/include/libxml2 $(SDKROOT)/usr/include/libresolv",
+        "HEADER_SEARCH_PATHS": "$(inherited) $(SDKROOT)/usr/include/libxml2 $(PODS_ROOT)/XMPPFramework/module $(SDKROOT)/usr/include/libresolv",
         "LIBRARY_SEARCH_PATHS": "\"$(PODS_ROOT)/XMPPFramework/Vendor/libidn\"",
+        "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES": "YES",
         "OTHER_LDFLAGS": "\"-lxml2\"",
-        "CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES": "YES"
+        "ENABLE_BITCODE": "NO"
       },
       "dependencies": {
         "CocoaLumberjack": [
@@ -96,14 +98,16 @@
     },
     {
       "name": "KissXML",
-      "source_files": "Vendor/KissXML/**/*.{h,m}",
+      "source_files": [
+        "Vendor/KissXML/**/*.{h,m}",
+        "module/module.modulemap"
+      ],
       "libraries": [
         "xml2",
         "resolv"
       ],
       "xcconfig": {
-        "HEADER_SEARCH_PATHS": "$(SDKROOT)/usr/include/libxml2 $(SDKROOT)/usr/include/libresolv",
-        "OTHER_LDFLAGS": "\"-lxml2\""
+        "HEADER_SEARCH_PATHS": "$(inherited) $(SDKROOT)/usr/include/libxml2 $(PODS_ROOT)/XMPPFramework/module $(SDKROOT)/usr/include/libresolv"
       }
     },
     {
