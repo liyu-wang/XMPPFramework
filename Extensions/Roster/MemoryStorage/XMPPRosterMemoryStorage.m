@@ -822,7 +822,7 @@
 - (void)getSubscription:(NSString **)subscription
 					ask:(NSString **)ask
 			   nickname:(NSString **)nickname
-				 groups:(NSArray **)groups
+                  group:(NSString **)group
 				 forJID:(XMPPJID *)jid
 			 xmppStream:(XMPPStream *)stream
 {
@@ -850,9 +850,9 @@
 			*nickname = rosterUser.nickname;
 		}
 		
-		if(groups)
+		if(group)
 		{
-			*groups = rosterUser.groups;
+			*group = rosterUser.group;
 		}
 	}
 }

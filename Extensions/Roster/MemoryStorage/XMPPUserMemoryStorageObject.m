@@ -33,7 +33,7 @@
 		
 		itemAttributes = [[NSMutableDictionary alloc] initWithCapacity:0];
 		
-		groups = [[NSMutableArray alloc] initWithCapacity:0];
+        group = nil;
 		
 		[self commonInit];
 	}
@@ -49,18 +49,14 @@
 		
 		itemAttributes = [item attributesAsDictionary];
 		
-		groups = [[NSMutableArray alloc] initWithCapacity:0];
+		NSXMLElement *groupElement = [item elementForName:@"group"];
 		
-		NSArray *groupElements = [item elementsForName:@"group"];
-		
-		for (NSXMLElement *groupElement in groupElements) {
-			NSString *groupName = [groupElement stringValue];
-		
-			if ([groupName length])
-			{
-				[groups addObject:groupName];
-			}
-		}
+        NSString *groupName = [groupElement stringValue];
+        
+        if ([groupName length])
+        {
+            group = groupName;
+        }
 		
 		[self commonInit];
 	}
@@ -80,7 +76,7 @@
 	
 	deepCopy->jid = [jid copy];
 	deepCopy->itemAttributes = [itemAttributes mutableCopy];
-	deepCopy->groups = [groups mutableCopy];
+	deepCopy->group = [group copy];
 	
 	deepCopy->resources = [[NSMutableDictionary alloc] initWithCapacity:[resources count]];
 	
@@ -122,7 +118,7 @@
             {
                 jid             = [coder decodeObjectOfClass:[XMPPJID class] forKey:@"jid"];
                 itemAttributes  = [[coder decodeObjectOfClass:[NSDictionary class] forKey:@"itemAttributes"] mutableCopy];
-                groups          = [[coder decodeObjectOfClass:[NSArray class] forKey:@"groups"] mutableCopy];
+                group           = [coder decodeObjectOfClass:[NSString class] forKey:@"group"];
 #if TARGET_OS_IPHONE
                 photo           = [[UIImage alloc] initWithData:[coder decodeObjectOfClass:[NSData class] forKey:@"photo"]];
 #else
@@ -135,7 +131,7 @@
             {
                 jid             = [coder decodeObjectForKey:@"jid"];
                 itemAttributes  = [[coder decodeObjectForKey:@"itemAttributes"] mutableCopy];
-                groups          = [[coder decodeObjectForKey:@"groups"] mutableCopy];
+                group           = [coder decodeObjectForKey:@"group"];
 #if TARGET_OS_IPHONE
                 photo           = [[UIImage alloc] initWithData:[coder decodeObjectForKey:@"photo"]];
 #else
@@ -149,7 +145,7 @@
 		{
 			jid             = [coder decodeObject];
 			itemAttributes  = [[coder decodeObject] mutableCopy];
-			groups          = [[coder decodeObject] mutableCopy];
+			group           = [coder decodeObject];
 		#if TARGET_OS_IPHONE
 			photo           = [[UIImage alloc] initWithData:[coder decodeObject]];
 		#else
@@ -168,7 +164,7 @@
 	{
 		[coder encodeObject:jid forKey:@"jid"];
 		[coder encodeObject:itemAttributes forKey:@"itemAttributes"];
-		[coder encodeObject:groups forKey:@"groups"];
+		[coder encodeObject:group forKey:@"group"];
 	#if TARGET_OS_IPHONE
 		[coder encodeObject:UIImagePNGRepresentation(photo) forKey:@"photo"];
 	#else
@@ -181,7 +177,7 @@
 	{
 		[coder encodeObject:jid];
 		[coder encodeObject:itemAttributes];
-		[coder encodeObject:groups];
+		[coder encodeObject:group];
 	#if TARGET_OS_IPHONE
 		[coder encodeObject:UIImagePNGRepresentation(photo)];
 	#else
@@ -232,9 +228,9 @@
 		return [jid bare];
 }
 
-- (NSArray *)groups
+- (NSString *)group
 {
-	return [groups copy];
+    return group;
 }
 
 - (BOOL)isOnline
@@ -346,18 +342,16 @@
 		itemAttributes[key] = value;
 	}
 	
-	[groups removeAllObjects];
+    group = nil;
 	
-	NSArray *groupElements = [item elementsForName:@"group"];
+	NSXMLElement *groupElement = [item elementForName:@"group"];
 	
-	for (NSXMLElement *groupElement in groupElements) {
-		NSString *groupName = [groupElement stringValue];
-		
-		if ([groupName length])
-		{
-			[groups addObject:groupName];
-		}
-	}
+    NSString *groupName = [groupElement stringValue];
+    
+    if ([groupName length])
+    {
+        group = groupName;
+    }
 }
 
 - (int)updateWithPresence:(XMPPPresence *)presence
