@@ -55,7 +55,7 @@ static const int xmppLogLevel = XMPP_LOG_LEVEL_WARN;
 @dynamic sectionName, primitiveSectionName;
 @dynamic sectionNum, primitiveSectionNum;
 
-@dynamic groups;
+@dynamic group;
 @dynamic primaryResource;
 @dynamic resources;
 
@@ -241,25 +241,19 @@ static const int xmppLogLevel = XMPP_LOG_LEVEL_WARN;
 - (void)updateGroupsWithItem:(NSXMLElement *)item
 {
 	XMPPGroupCoreDataStorageObject *group = nil;
+    
+    // clear existing group memberships first
+    self.group = nil;
 
-	// clear existing group memberships first
-	if ([self.groups count] > 0) {
-		[self removeGroups:self.groups];
-	}
-
-	NSArray *groupItems = [item elementsForName:@"group"];
-	NSString *groupName = nil;
-
-	for (NSXMLElement *groupElement in groupItems) {
-		groupName = [groupElement stringValue];
-
-		group = [XMPPGroupCoreDataStorageObject fetchOrInsertGroupName:groupName 
-		                                        inManagedObjectContext:[self managedObjectContext]];
-
-		if (group != nil) {
-			[self addGroupsObject:group];
-		}
-	}
+    NSXMLElement *groupElement = [item elementForName:@"group"];
+    if (groupElement != nil) {
+        NSString *groupName = [groupElement stringValue];
+        group = [XMPPGroupCoreDataStorageObject fetchOrInsertGroupName:groupName
+                                                inManagedObjectContext:[self managedObjectContext]];
+        if (group != nil) {
+            [self setGroup:group];
+        }
+    }
 }
 
 - (void)updateWithItem:(NSXMLElement *)item

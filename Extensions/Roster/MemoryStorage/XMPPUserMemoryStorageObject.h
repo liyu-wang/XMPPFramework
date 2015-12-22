@@ -15,7 +15,7 @@
 {
 	XMPPJID *jid;
 	NSMutableDictionary *itemAttributes;
-	NSMutableArray *groups;
+	NSString *group;
 	
 	NSMutableDictionary *resources;
 	XMPPResourceMemoryStorageObject *primaryResource;
@@ -56,7 +56,7 @@
 /**
  * An array of Group Names.
 **/
-- (NSArray *)groups;
+- (NSString *)group;
 
 /**
  * If XMPPvCardAvatarModule is included in the framework, the XMPPRoster will automatically integrate with it,

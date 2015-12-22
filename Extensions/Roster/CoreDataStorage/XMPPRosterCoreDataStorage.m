@@ -527,7 +527,7 @@ static XMPPRosterCoreDataStorage *sharedInstance;
 - (void)getSubscription:(NSString **)subscription
                     ask:(NSString **)ask
                nickname:(NSString **)nickname
-                 groups:(NSArray **)groups
+                  group:(NSString **)group
                  forJID:(XMPPJID *)jid
              xmppStream:(XMPPStream *)stream
 {
@@ -555,18 +555,10 @@ static XMPPRosterCoreDataStorage *sharedInstance;
                 *nickname = user.nickname;
             }
             
-            if(groups)
+            if(group)
             {
-                if([user.groups count])
-                {
-                    NSMutableArray *groupNames = [NSMutableArray array];
-                    
-                    for(XMPPGroupCoreDataStorageObject *group in user.groups){
-                        [groupNames addObject:group.name];
-                    }
-                    
-                    *groups = groupNames;
-                }
+                XMPPGroupCoreDataStorageObject *groupObj = user.group;
+                *group = groupObj.name;
             }
         }
     }];

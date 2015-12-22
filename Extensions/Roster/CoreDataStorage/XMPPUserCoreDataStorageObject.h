@@ -39,7 +39,7 @@
 @property (nonatomic, strong) NSString * sectionName;
 @property (nonatomic, strong) NSNumber * sectionNum;
 
-@property (nonatomic, strong) NSSet * groups;
+@property (nonatomic, strong) XMPPGroupCoreDataStorageObject *group;
 @property (nonatomic, strong) XMPPResourceCoreDataStorageObject * primaryResource;
 @property (nonatomic, strong) NSSet * resources;
 
@@ -70,10 +70,5 @@
 - (void)removeResourcesObject:(XMPPResourceCoreDataStorageObject *)value;
 - (void)addResources:(NSSet *)value;
 - (void)removeResources:(NSSet *)value;
-
-- (void)addGroupsObject:(XMPPGroupCoreDataStorageObject *)value;
-- (void)removeGroupsObject:(XMPPGroupCoreDataStorageObject *)value;
-- (void)addGroups:(NSSet *)value;
-- (void)removeGroups:(NSSet *)value;
 
 @end
