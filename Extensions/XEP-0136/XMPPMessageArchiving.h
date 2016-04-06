@@ -136,6 +136,7 @@
                  outgoing:(BOOL)isOutgoing
                    isRead:(BOOL)read
              updateRecent:(BOOL)updateRecentFlag
+              saveMessage:(BOOL)saveMessageFlag
                xmppStream:(XMPPStream *)xmppStream;
 
 - (void)oa_markRecentContactMessageWithId:(id)managedObjId asRead:(BOOL)read;

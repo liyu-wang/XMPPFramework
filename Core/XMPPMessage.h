@@ -53,3 +53,29 @@
 - (NSError *)errorMessage;
 
 @end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma mark - OASIS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+typedef NS_ENUM(int16_t, OAXMPPMessageType) {
+    OAXMPPMessageTypeText = 0,
+    OAXMPPMessageTypePhoto = 1,
+    OAXMPPMessageTypeSystem = 2,
+    OAXMPPMessageTypeAlert,
+    OAXMPPMessageTypeOthers,
+};
+
+@interface XMPPMessage (Oasis)
+
+- (OAXMPPMessageType)oa_messageType;
+
+- (BOOL)oa_isPhotoMessage;
+- (BOOL)oa_isSystemMessage;
+
+- (NSString *)oa_photoMessageContent;
+- (NSString *)oa_systemMessageContent;
+
+- (void)oa_addPayload:(NSString *)payload forMsgType:(OAXMPPMessageType)type;
+
+@end
