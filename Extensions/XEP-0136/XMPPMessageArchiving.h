@@ -14,7 +14,10 @@
   @protected
 	
 	__strong id <XMPPMessageArchivingStorage> xmppMessageArchivingStorage;
-	
+// oasis <
+    NSMutableDictionary *_pendingQueries;
+// oasis >
+    
   @private
 	
 	BOOL clientSideMessageArchivingOnly;
@@ -50,6 +53,14 @@
  * 
 **/
 @property (readwrite, copy) NSXMLElement *preferences;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma mark - Oasis
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+- (void)oa_fetchArchivedMessagesFromServerWithJid:(NSString *)bareJid max:(NSInteger)maxNumber completion:(void (^)(NSError *error))block;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @end
 
@@ -114,4 +125,52 @@
 **/
 - (NSXMLElement *)preferencesForUser:(XMPPJID *)bareUserJid;
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma mark - Oasis
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// updateRecentFlag indicate if we should update recent contact
+- (void)oa_archiveMessage:(XMPPMessage *)message
+                timestamp:(NSDate *)timestamp
+                 outgoing:(BOOL)isOutgoing
+                   isRead:(BOOL)read
+             updateRecent:(BOOL)updateRecentFlag
+               xmppStream:(XMPPStream *)xmppStream;
+
+- (void)oa_markRecentContactMessageWithId:(id)managedObjId asRead:(BOOL)read;
+
+- (void)oa_removeOldArchivedMessagesWithJid:(NSString *)bareJid;
+
+- (void)oa_removeOldRecentContactList;
+
+- (void)oa_addNewRecentContactList:(NSArray *)chats;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 @end
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma mark - OAXMPPMessageArchivingDelegate & error domain
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+extern NSString *const OAXMPPMessageArchivingErrorDomain;
+
+typedef enum OAXMPPMessageArchivingErrorCode {
+    OAXMPPMessageArchivingErrorCodeTimeout = 0,
+    OAXMPPMessageArchivingErrorCodeDisconnect,
+    OAXMPPMessageArchivingErrorCodeServerError
+} OAXMPPMessageArchivingErrorCode;
+
+
+@protocol OAXMPPMessageArchivingDelegate <NSObject>
+@optional
+
+- (void)messageArchiving:(XMPPMessageArchiving *)sender didFetchConversationList:(NSArray *)items;
+- (void)messageArchiving:(XMPPMessageArchiving *)sender failedToFetchConversationList:(NSError *)error;
+
+@end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
