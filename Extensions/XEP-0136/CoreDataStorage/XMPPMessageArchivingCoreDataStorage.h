@@ -48,6 +48,11 @@
                                                       streamBareJidStr:(NSString *)streamBareJidStr
                                                   managedObjectContext:(NSManagedObjectContext *)moc;
 
+// oasis <
+- (XMPPMessageArchiving_Contact_CoreDataObject *)oa_recentContactWithUsername:(NSString *)username
+                                                         managedObjectContext:(NSManagedObjectContext *)moc;
+// oasis >
+
 /* Inherited from XMPPCoreDataStorage
  * Please see the XMPPCoreDataStorage header file for extensive documentation.
  
