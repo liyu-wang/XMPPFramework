@@ -504,7 +504,7 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
 	{
 // oasis <
 //		[xmppMessageArchivingStorage archiveMessage:message outgoing:YES xmppStream:sender];
-        [xmppMessageArchivingStorage oa_archiveMessage:message timestamp:nil outgoing:YES isRead:YES updateRecent:YES xmppStream:sender];
+        [xmppMessageArchivingStorage oa_archiveMessage:message timestamp:nil outgoing:YES isRead:YES updateRecent:YES saveMessage:YES xmppStream:sender];
 // oasis >
 	}
 }
@@ -519,7 +519,7 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
 //		[xmppMessageArchivingStorage archiveMessage:message outgoing:NO xmppStream:sender];
         if (![message hasComposingChatState]) {
             // don't store composing message in db
-            [xmppMessageArchivingStorage oa_archiveMessage:message timestamp:nil outgoing:NO isRead:NO updateRecent:YES xmppStream:sender];
+            [xmppMessageArchivingStorage oa_archiveMessage:message timestamp:nil outgoing:NO isRead:NO updateRecent:YES saveMessage:YES xmppStream:sender];
         }
 // oasis >
 	}
@@ -635,9 +635,10 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
     
     //    <iq to="liyuw@talk1.qa.oasisactive.net/OASIS_FSC" type="result" id="2345:retrieve">
     //        <chat start="2013-11-14T12:53:08.999Z" with="101@talk1.qa.oasisactive.net" xmlns="urn:xmpp:archive">
-    //            <from secs="0"><body>1</body></from>
+    //            <from secs="0"><body type="2"></body></from>
     //            <from secs="1182765"><body>2</body></from>
-    //            <from secs="1182769"><body>3</body></from>
+    //            <from secs="1182769"><body type="0">3</body></from>
+    //            <from secs="1197337"><body type="1">_103_get2_/images/14520011032016_get2_[width]x[height].jpg</body></from>
     //            <set xmlns="http://jabber.org/protocol/rsm">
     //                <first index="0">0</first>
     //                <last>0</last>
@@ -690,7 +691,9 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
                 [message addAttributeWithName:@"from" stringValue:withBareJid];
             }
             
-            [message addChild:[NSXMLElement elementWithName:@"body" stringValue:body.stringValue]];
+            // add payload based on oasis message type
+            OAXMPPMessageType oaMsgType = [body attributeIntegerValueForName:@"type" withDefaultValue:OAXMPPMessageTypeText];
+            [message oa_addPayload:body.stringValue forMsgType:oaMsgType];
             
             // only update recent for the most recent message
             [xmppMessageArchivingStorage oa_archiveMessage:message
@@ -698,6 +701,7 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
                                                   outgoing:isOutgoing
                                                     isRead:YES
                                               updateRecent:(i == children.count - 2)
+                                               saveMessage:YES
                                                 xmppStream:xmppStream];
             
             prevSecOffset = secOffset;
@@ -775,26 +779,29 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
             
             XMPPMessage *message = [XMPPMessage messageWithType:@"chat"];
             
-            NSString *bodyStr = nil;
-            BOOL outgoing = FALSE;
+            OAXMPPMessageType oaMsgType;
+            NSXMLElement *body;
+            BOOL outgoing = NO;
             NSXMLElement *from = [chat elementForName:@"from"];
             if (from) {
-                bodyStr = [[from elementForName:@"body"] stringValue];
+                body = [from elementForName:@"body"];
+                oaMsgType = [body attributeIntegerValueForName:@"type" withDefaultValue:OAXMPPMessageTypeText];
+                
                 [message addAttributeWithName:@"from" stringValue:username];
             } else {
                 NSXMLElement *to = [chat elementForName:@"to"];
-                if (to) {
-                    bodyStr = [[to elementForName:@"body"] stringValue];
-                    outgoing = TRUE;
-                    [message addAttributeWithName:@"to" stringValue:username];
-                }
+                body = [to elementForName:@"body"];
+                oaMsgType = [body attributeIntegerValueForName:@"type" withDefaultValue:OAXMPPMessageTypeText];
+                outgoing = YES;
+                
+                [message addAttributeWithName:@"to" stringValue:username];
             }
             
-            NSXMLElement *body = [NSXMLElement elementWithName:@"body" stringValue:bodyStr];
-            [message addChild:body];
+            // add payload based on oasis message type
+            [message oa_addPayload:[body stringValue] forMsgType:oaMsgType];
             
             // update only the recent contact table
-            [xmppMessageArchivingStorage oa_archiveMessage:message timestamp:timeStamp outgoing:outgoing isRead: YES updateRecent:YES xmppStream:self.xmppStream];
+            [xmppMessageArchivingStorage oa_archiveMessage:message timestamp:timeStamp outgoing:outgoing isRead: YES updateRecent:YES saveMessage:NO xmppStream:self.xmppStream];
         }
         
         [multicastDelegate messageArchiving:self didFetchConversationList:nil];

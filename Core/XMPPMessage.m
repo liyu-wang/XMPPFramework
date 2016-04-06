@@ -265,3 +265,75 @@
 }
 
 @end
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma mark - OASIS
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+@implementation XMPPMessage (Oasis)
+
+- (OAXMPPMessageType)oa_messageType {
+    if ([self isChatMessageWithBody]) {
+        return OAXMPPMessageTypeText;
+    } else {
+        if ([self oa_isPhotoMessage]) {
+            return OAXMPPMessageTypePhoto;
+        }
+        
+        if ([self oa_isOasisAlert]) {
+            return OAXMPPMessageTypeAlert;
+        }
+        
+        if ([self oa_isSystemMessage]) {
+            return OAXMPPMessageTypeSystem;
+        }
+    }
+
+    return OAXMPPMessageTypeOthers;
+}
+
+- (BOOL)oa_isOasisAlert {
+    return ([self elementForName:@"oasis"] != nil);
+}
+
+- (BOOL)oa_isPhotoMessage {
+    return ([self elementForName:@"image" xmlns:@"http://oasis.com/image"] != nil);
+}
+
+- (BOOL)oa_isSystemMessage {
+    return ([self elementForName:@"notification" xmlns:@"http://oasis.com/notification"] != nil);
+}
+
+- (NSString *)oa_photoMessageContent {
+    if ([self oa_isPhotoMessage]) {
+        NSXMLElement *imageElement = [self elementForName:@"image" xmlns:@"http://oasis.com/image"];
+        return [imageElement stringValue];
+    } else {
+        return nil;
+    }
+}
+
+- (NSString *)oa_systemMessageContent {
+    if ([self oa_isSystemMessage]) {
+        NSXMLElement *systemElement = [self elementForName:@"notification" xmlns:@"http://oasis.com/notification"];
+        return [systemElement stringValue];
+    } else {
+        return nil;
+    }
+}
+
+- (void)oa_addPayload:(NSString *)payload forMsgType:(OAXMPPMessageType)oaMsgType {
+    if (oaMsgType == OAXMPPMessageTypePhoto) {
+        NSXMLElement *imageElement = [NSXMLElement elementWithName:@"image" stringValue:payload];
+        [imageElement setXmlns:@"http://oasis.com/image"];
+        [self addChild:imageElement];
+    } else if (oaMsgType == OAXMPPMessageTypeSystem) {
+        NSXMLElement *notificationElement = [NSXMLElement elementWithName:@"notification" stringValue:payload];
+        [notificationElement setXmlns:@"http://oasis.com/notification"];
+        [self addChild:notificationElement];
+    } else {
+        [self addChild:[NSXMLElement elementWithName:@"body" stringValue:payload]];
+    }
+}
+
+@end

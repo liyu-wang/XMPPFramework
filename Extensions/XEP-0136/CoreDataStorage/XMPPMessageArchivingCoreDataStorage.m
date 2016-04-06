@@ -518,6 +518,7 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
                  outgoing:(BOOL)isOutgoing
                    isRead:(BOOL)read
              updateRecent:(BOOL)updateRecentFlag
+              saveMessage:(BOOL)saveMessageFlag
                xmppStream:(XMPPStream *)xmppStream {
     
     // Message should either have a body, or be a composing notification
@@ -525,6 +526,7 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
     NSString *messageBody = [[message elementForName:@"body"] stringValue];
     BOOL isComposing = NO;
     BOOL shouldDeleteComposingMessage = NO;
+    OAXMPPMessageType msgType = OAXMPPMessageTypeText;
     
     if ([messageBody length] == 0)
     {
@@ -543,9 +545,20 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
             }
             else
             {
-                // Message has no body and no chat state.
-                // Nothing to do with it.
-                return;
+                if ([message oa_isPhotoMessage])
+                {
+                    msgType = OAXMPPMessageTypePhoto;
+                }
+                else if ([message oa_isSystemMessage])
+                {
+                    msgType = OAXMPPMessageTypeSystem;
+                }
+                else
+                {
+                    // Message has no body and no chat state.
+                    // Nothing to do with it.
+                    return;
+                }
             }
         }
     }
@@ -593,61 +606,73 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
             }
             else
             {
-                XMPPLogVerbose(@"Previous archivedMessage: %@", archivedMessage);
-                
-                BOOL didCreateNewArchivedMessage = NO;
-                if (archivedMessage == nil)
-                {
-                    archivedMessage = (XMPPMessageArchiving_Message_CoreDataObject *)
-                    [[NSManagedObject alloc] initWithEntity:[self messageEntity:moc]
-                             insertIntoManagedObjectContext:nil];
+                if (saveMessageFlag) {
+                    XMPPLogVerbose(@"Previous archivedMessage: %@", archivedMessage);
                     
-                    didCreateNewArchivedMessage = YES;
-                }
-                
-                archivedMessage.message = message;
-                archivedMessage.body = messageBody;
-                
-                archivedMessage.bareJid = [messageJid bareJID];
-                archivedMessage.streamBareJidStr = [myJid bare];
-                
-                if (timestamp) {
-                    archivedMessage.timestamp = timestamp;
-                } else {
-                    NSDate *timestamp = [message delayedDeliveryDate];
-                    if (timestamp)
+                    BOOL didCreateNewArchivedMessage = NO;
+                    if (archivedMessage == nil)
+                    {
+                        archivedMessage = (XMPPMessageArchiving_Message_CoreDataObject *)
+                        [[NSManagedObject alloc] initWithEntity:[self messageEntity:moc]
+                                 insertIntoManagedObjectContext:nil];
+                        
+                        didCreateNewArchivedMessage = YES;
+                    }
+                    
+                    archivedMessage.message = message;
+                    if (msgType == OAXMPPMessageTypePhoto) {
+                        archivedMessage.body = [message oa_photoMessageContent];
+                    } else if (msgType == OAXMPPMessageTypeSystem) {
+                        archivedMessage.body = [message oa_systemMessageContent];
+                    } else {
+                        archivedMessage.body = messageBody;
+                    }
+                    
+                    archivedMessage.messageType = msgType;
+                    
+                    archivedMessage.bareJid = [messageJid bareJID];
+                    archivedMessage.streamBareJidStr = [myJid bare];
+                    
+                    if (timestamp) {
                         archivedMessage.timestamp = timestamp;
+                    } else {
+                        NSDate *timestamp = [message delayedDeliveryDate];
+                        if (timestamp)
+                            archivedMessage.timestamp = timestamp;
+                        else
+                            archivedMessage.timestamp = [[NSDate alloc] init];
+                    }
+                    
+                    archivedMessage.thread = [[message elementForName:@"thread"] stringValue];
+                    archivedMessage.isOutgoing = isOutgoing;
+                    archivedMessage.isComposing = isComposing;
+                    
+                    XMPPLogVerbose(@"New archivedMessage: %@", archivedMessage);
+                    
+                    if (didCreateNewArchivedMessage) // [archivedMessage isInserted] doesn't seem to work
+                    {
+                        XMPPLogVerbose(@"Inserting message...");
+                        
+                        [archivedMessage willInsertObject];       // Override hook
+                        [self willInsertMessage:archivedMessage]; // Override hook
+                        [moc insertObject:archivedMessage];
+                    }
                     else
-                        archivedMessage.timestamp = [[NSDate alloc] init];
-                }
-                
-                archivedMessage.thread = [[message elementForName:@"thread"] stringValue];
-                archivedMessage.isOutgoing = isOutgoing;
-                archivedMessage.isComposing = isComposing;
-                
-                XMPPLogVerbose(@"New archivedMessage: %@", archivedMessage);
-                
-                if (didCreateNewArchivedMessage) // [archivedMessage isInserted] doesn't seem to work
-                {
-                    XMPPLogVerbose(@"Inserting message...");
-                    
-                    [archivedMessage willInsertObject];       // Override hook
-                    [self willInsertMessage:archivedMessage]; // Override hook
-                    [moc insertObject:archivedMessage];
-                }
-                else
-                {
-                    XMPPLogVerbose(@"Updating message...");
-                    
-                    [archivedMessage didUpdateObject];       // Override hook
-                    [self didUpdateMessage:archivedMessage]; // Override hook
+                    {
+                        XMPPLogVerbose(@"Updating message...");
+                        
+                        [archivedMessage didUpdateObject];       // Override hook
+                        [self didUpdateMessage:archivedMessage]; // Override hook
+                    }
                 }
             }
 
         }
         
         // Create or update contact (if message with actual content)
-        if ([messageBody length] > 0 && updateRecentFlag)
+//        if (([messageBody length] > 0 || msgType == OAXMPPMessageTypePhoto || msgType == OAXMPPMessageTypeSystem)
+//            && updateRecentFlag)
+        if (updateRecentFlag && (message.isChatMessage && msgType != OAXMPPMessageTypeOthers))
         {
             BOOL didCreateNewContact = NO;
             
@@ -655,6 +680,14 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
             // because the conversation list doesn't return jid
             XMPPMessageArchiving_Contact_CoreDataObject *contact = [self oa_recentContactWithUsername:username
                                                                                  managedObjectContext:moc];
+            
+            if ([message wasDelayed]) {
+                // earlier delayed message shouldn't override later delayed message in conversation list
+                NSComparisonResult *result = [contact.mostRecentMessageTimestamp compare:[message delayedDeliveryDate]];
+                if (result == NSOrderedDescending || result == NSOrderedSame) {
+                    return;
+                }
+            }
             
             XMPPLogVerbose(@"Previous contact: %@", contact);
             
@@ -690,9 +723,16 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
                     contact.mostRecentMessageTimestamp = [[NSDate alloc] init];
                 }
             }
-            contact.mostRecentMessageBody = messageBody;
-            contact.mostRecentMessageOutgoing = [NSNumber numberWithBool:isOutgoing];
             
+            if (msgType == OAXMPPMessageTypePhoto) {
+                contact.mostRecentMessageBody = @"[image]";
+            } else if (msgType == OAXMPPMessageTypeSystem) {
+                contact.mostRecentMessageBody = [message oa_systemMessageContent];
+            } else {
+                contact.mostRecentMessageBody = messageBody;
+            }
+            
+            contact.mostRecentMessageOutgoing = [NSNumber numberWithBool:isOutgoing];
             contact.isRead = [NSNumber numberWithBool:read];
             
             XMPPLogVerbose(@"New contact: %@", contact);
@@ -736,15 +776,15 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
         NSError *error = nil;
         NSArray *allMessages = [moc executeFetchRequest:fetchArchivedMessagesRequest error:&error];
         
-        NSUInteger unsavedCount = [self numberOfUnsavedChanges];
+//        NSUInteger unsavedCount = [self numberOfUnsavedChanges];
         
         for (NSManagedObject *msg in allMessages) {
             [moc deleteObject: msg];
             
-            if (++unsavedCount >= saveThreshold) {
-                [self save];
-                unsavedCount = 0;
-            }
+//            if (++unsavedCount >= saveThreshold) {
+//                [self save];
+//                unsavedCount = 0;
+//            }
         }
     }];
 }
@@ -760,15 +800,15 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
         NSError *error = nil;
         NSArray *allRecentChats = [moc executeFetchRequest:fetchRecentChatsRequest error:&error];
         
-        NSUInteger unsavedCount = [self numberOfUnsavedChanges];
+//        NSUInteger unsavedCount = [self numberOfUnsavedChanges];
         
         for (NSManagedObject *chat in allRecentChats) {
             [moc deleteObject: chat];
             
-            if (++unsavedCount >= saveThreshold) {
-                [self save];
-                unsavedCount = 0;
-            }
+//            if (++unsavedCount >= saveThreshold) {
+//                [self save];
+//                unsavedCount = 0;
+//            }
         }
     }];
 }
