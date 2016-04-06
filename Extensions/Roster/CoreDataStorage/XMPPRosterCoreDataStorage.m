@@ -256,6 +256,36 @@ static XMPPRosterCoreDataStorage *sharedInstance;
 	return (XMPPResourceCoreDataStorageObject *)[results lastObject];
 }
 
+// oasis <
+
+- (XMPPUserCoreDataStorageObject *)oa_userForUsername:(NSString *)username
+                                 managedObjectContext:(NSManagedObjectContext *)moc {
+    
+    // This is a public method, so it may be invoked on any thread/queue.
+    
+    XMPPLogTrace();
+    
+    if (username == nil) return nil;
+    if (moc == nil) return nil;
+    
+    NSEntityDescription *entity = [NSEntityDescription entityForName:@"XMPPUserCoreDataStorageObject"
+                                              inManagedObjectContext:moc];
+    
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"displayName == %@", username];;
+    
+    NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
+    [fetchRequest setEntity:entity];
+    [fetchRequest setPredicate:predicate];
+    [fetchRequest setIncludesPendingChanges:YES];
+    [fetchRequest setFetchLimit:1];
+    
+    NSArray *results = [moc executeFetchRequest:fetchRequest error:nil];
+    
+    return (XMPPUserCoreDataStorageObject *)[results lastObject];
+}
+
+// oasis >
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark Protocol Private API
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
