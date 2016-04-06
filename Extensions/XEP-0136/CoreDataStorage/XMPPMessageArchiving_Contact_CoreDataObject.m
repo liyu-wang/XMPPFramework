@@ -17,6 +17,10 @@
 @dynamic mostRecentMessageBody;
 @dynamic mostRecentMessageOutgoing;
 @dynamic streamBareJidStr;
+// liyu <
+@dynamic username;
+@dynamic isRead;
+// liyu >
 
 #pragma mark Transient bareJid
 

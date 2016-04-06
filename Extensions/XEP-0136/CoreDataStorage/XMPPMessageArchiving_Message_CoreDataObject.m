@@ -24,6 +24,10 @@
 @dynamic timestamp;
 @dynamic streamBareJidStr;
 
+// oasis <
+@dynamic messageType;
+// oasis >
+
 #pragma mark Transient message
 
 - (XMPPMessage *)message

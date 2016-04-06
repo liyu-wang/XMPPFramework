@@ -485,4 +485,336 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
 	}];
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma mark - Oasis
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+- (XMPPMessageArchiving_Contact_CoreDataObject *)oa_recentContactWithUsername:(NSString *)username managedObjectContext:(NSManagedObjectContext *)moc {
+    NSEntityDescription *entity = [self contactEntity:moc];
+    
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"username == %@", username];
+    
+    NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
+    [fetchRequest setEntity:entity];
+    [fetchRequest setFetchLimit:1];
+    [fetchRequest setPredicate:predicate];
+    
+    NSError *error = nil;
+    NSArray *results = [moc executeFetchRequest:fetchRequest error:&error];
+    
+    if (results == nil)
+    {
+        XMPPLogError(@"%@: %@ - Fetch request error: %@", THIS_FILE, THIS_METHOD, error);
+        return nil;
+    }
+    else
+    {
+        return (XMPPMessageArchiving_Contact_CoreDataObject *)[results lastObject];
+    }
+}
+
+- (void)oa_archiveMessage:(XMPPMessage *)message
+                timestamp:(NSDate *)timestamp
+                 outgoing:(BOOL)isOutgoing
+                   isRead:(BOOL)read
+             updateRecent:(BOOL)updateRecentFlag
+              saveMessage:(BOOL)saveMessageFlag
+               xmppStream:(XMPPStream *)xmppStream {
+    
+    // Message should either have a body, or be a composing notification
+    
+    NSString *messageBody = [[message elementForName:@"body"] stringValue];
+    BOOL isComposing = NO;
+    BOOL shouldDeleteComposingMessage = NO;
+    OAXMPPMessageType msgType = OAXMPPMessageTypeText;
+    
+    if ([messageBody length] == 0)
+    {
+        // Message doesn't have a body.
+        // Check to see if it has a chat state (composing, paused, etc).
+        
+        isComposing = [message hasComposingChatState];
+        if (!isComposing)
+        {
+            if ([message hasChatState])
+            {
+                // Message has non-composing chat state.
+                // So if there is a current composing message in the database,
+                // then we need to delete it.
+                shouldDeleteComposingMessage = YES;
+            }
+            else
+            {
+                if ([message oa_isPhotoMessage])
+                {
+                    msgType = OAXMPPMessageTypePhoto;
+                }
+                else if ([message oa_isSystemMessage])
+                {
+                    msgType = OAXMPPMessageTypeSystem;
+                }
+                else
+                {
+                    // Message has no body and no chat state.
+                    // Nothing to do with it.
+                    return;
+                }
+            }
+        }
+    }
+    
+    [self scheduleBlock:^{
+        
+        NSManagedObjectContext *moc = [self managedObjectContext];
+        XMPPJID *myJid = [self myJIDForXMPPStream:xmppStream];
+        
+        XMPPJID *messageJid = nil;
+        NSString *username = nil;
+        NSString *jidOrUsername = isOutgoing ? [message toStr] : [message fromStr];
+        
+        if ([jidOrUsername rangeOfString:@"@"].location != NSNotFound)
+        {
+            messageJid = [XMPPJID jidWithString: jidOrUsername];
+            username = messageJid.user;
+        } else {
+            username = jidOrUsername;
+        }
+        
+        // check if the message has proper jid, fetch conversation list will skip this
+        if (messageJid) {
+            
+            // Fetch-n-Update OR Insert new message
+            
+            XMPPMessageArchiving_Message_CoreDataObject *archivedMessage =
+            [self composingMessageWithJid:messageJid
+                                streamJid:myJid
+                                 outgoing:isOutgoing
+                     managedObjectContext:moc];
+            
+            if (shouldDeleteComposingMessage)
+            {
+                if (archivedMessage)
+                {
+                    [self willDeleteMessage:archivedMessage]; // Override hook
+                    [moc deleteObject:archivedMessage];
+                }
+                else
+                {
+                    // Composing message has already been deleted (or never existed)
+                }
+                return;
+            }
+            else
+            {
+                if (saveMessageFlag) {
+                    XMPPLogVerbose(@"Previous archivedMessage: %@", archivedMessage);
+                    
+                    BOOL didCreateNewArchivedMessage = NO;
+                    if (archivedMessage == nil)
+                    {
+                        archivedMessage = (XMPPMessageArchiving_Message_CoreDataObject *)
+                        [[NSManagedObject alloc] initWithEntity:[self messageEntity:moc]
+                                 insertIntoManagedObjectContext:nil];
+                        
+                        didCreateNewArchivedMessage = YES;
+                    }
+                    
+                    archivedMessage.message = message;
+                    if (msgType == OAXMPPMessageTypePhoto) {
+                        archivedMessage.body = [message oa_photoMessageContent];
+                    } else if (msgType == OAXMPPMessageTypeSystem) {
+                        archivedMessage.body = [message oa_systemMessageContent];
+                    } else {
+                        archivedMessage.body = messageBody;
+                    }
+                    
+                    archivedMessage.messageType = msgType;
+                    
+                    archivedMessage.bareJid = [messageJid bareJID];
+                    archivedMessage.streamBareJidStr = [myJid bare];
+                    
+                    if (timestamp) {
+                        archivedMessage.timestamp = timestamp;
+                    } else {
+                        NSDate *timestamp = [message delayedDeliveryDate];
+                        if (timestamp)
+                            archivedMessage.timestamp = timestamp;
+                        else
+                            archivedMessage.timestamp = [[NSDate alloc] init];
+                    }
+                    
+                    archivedMessage.thread = [[message elementForName:@"thread"] stringValue];
+                    archivedMessage.isOutgoing = isOutgoing;
+                    archivedMessage.isComposing = isComposing;
+                    
+                    XMPPLogVerbose(@"New archivedMessage: %@", archivedMessage);
+                    
+                    if (didCreateNewArchivedMessage) // [archivedMessage isInserted] doesn't seem to work
+                    {
+                        XMPPLogVerbose(@"Inserting message...");
+                        
+                        [archivedMessage willInsertObject];       // Override hook
+                        [self willInsertMessage:archivedMessage]; // Override hook
+                        [moc insertObject:archivedMessage];
+                    }
+                    else
+                    {
+                        XMPPLogVerbose(@"Updating message...");
+                        
+                        [archivedMessage didUpdateObject];       // Override hook
+                        [self didUpdateMessage:archivedMessage]; // Override hook
+                    }
+                }
+            }
+
+        }
+        
+        // Create or update contact (if message with actual content)
+//        if (([messageBody length] > 0 || msgType == OAXMPPMessageTypePhoto || msgType == OAXMPPMessageTypeSystem)
+//            && updateRecentFlag)
+        if (updateRecentFlag && (message.isChatMessage && msgType != OAXMPPMessageTypeOthers))
+        {
+            BOOL didCreateNewContact = NO;
+            
+            // use username rather than jid to find the recent contact
+            // because the conversation list doesn't return jid
+            XMPPMessageArchiving_Contact_CoreDataObject *contact = [self oa_recentContactWithUsername:username
+                                                                                 managedObjectContext:moc];
+            
+            if ([message wasDelayed]) {
+                // earlier delayed message shouldn't override later delayed message in conversation list
+                NSComparisonResult *result = [contact.mostRecentMessageTimestamp compare:[message delayedDeliveryDate]];
+                if (result == NSOrderedDescending || result == NSOrderedSame) {
+                    return;
+                }
+            }
+            
+            XMPPLogVerbose(@"Previous contact: %@", contact);
+            
+            if (contact == nil)
+            {
+                contact = (XMPPMessageArchiving_Contact_CoreDataObject *)
+                [[NSManagedObject alloc] initWithEntity:[self contactEntity:moc]
+                         insertIntoManagedObjectContext:nil];
+                
+                didCreateNewContact = YES;
+            }
+            
+            contact.streamBareJidStr = myJid.bare;
+            if (messageJid)
+            {
+                contact.bareJid = messageJid;
+                contact.username = messageJid.user;
+            } else {
+                contact.username = username;
+            }
+            
+            if (timestamp)
+            {
+                contact.mostRecentMessageTimestamp = timestamp;
+            }
+            else
+            {
+                if ([message wasDelayed]) {
+                    contact.mostRecentMessageTimestamp = [message delayedDeliveryDate];
+                }
+                else
+                {
+                    contact.mostRecentMessageTimestamp = [[NSDate alloc] init];
+                }
+            }
+            
+            if (msgType == OAXMPPMessageTypePhoto) {
+                contact.mostRecentMessageBody = @"[image]";
+            } else if (msgType == OAXMPPMessageTypeSystem) {
+                contact.mostRecentMessageBody = [message oa_systemMessageContent];
+            } else {
+                contact.mostRecentMessageBody = messageBody;
+            }
+            
+            contact.mostRecentMessageOutgoing = [NSNumber numberWithBool:isOutgoing];
+            contact.isRead = [NSNumber numberWithBool:read];
+            
+            XMPPLogVerbose(@"New contact: %@", contact);
+            
+            if (didCreateNewContact) // [contact isInserted] doesn't seem to work
+            {
+                XMPPLogVerbose(@"Inserting contact...");
+                
+                [contact willInsertObject];       // Override hook
+                [self willInsertContact:contact]; // Override hook
+                [moc insertObject:contact];
+            }
+            else
+            {
+                XMPPLogVerbose(@"Updating contact...");
+                
+                [contact didUpdateObject];       // Override hook
+                [self didUpdateContact:contact]; // Override hook
+            }
+        }
+    }];
+
+}
+
+- (void)oa_markRecentContactMessageWithId:(id)managedObjId asRead:(BOOL)read {
+    [self scheduleBlock:^{
+        NSManagedObject *mObj = [[self managedObjectContext] objectWithID:managedObjId];
+        [mObj setValue:[NSNumber numberWithBool:read] forKey:@"isRead"];
+    }];
+}
+
+- (void)oa_removeOldArchivedMessagesWithJid:(NSString *)bareJid {
+    [self scheduleBlock:^{
+        NSManagedObjectContext *moc = [self managedObjectContext];
+        
+        NSFetchRequest *fetchArchivedMessagesRequest = [[NSFetchRequest alloc] init];
+        fetchArchivedMessagesRequest.entity = [NSEntityDescription entityForName:@"XMPPMessageArchiving_Message_CoreDataObject" inManagedObjectContext:moc];
+        fetchArchivedMessagesRequest.predicate = [NSPredicate predicateWithFormat:@"bareJidStr == %@", bareJid];
+        fetchArchivedMessagesRequest.includesPropertyValues = false;
+        
+        NSError *error = nil;
+        NSArray *allMessages = [moc executeFetchRequest:fetchArchivedMessagesRequest error:&error];
+        
+//        NSUInteger unsavedCount = [self numberOfUnsavedChanges];
+        
+        for (NSManagedObject *msg in allMessages) {
+            [moc deleteObject: msg];
+            
+//            if (++unsavedCount >= saveThreshold) {
+//                [self save];
+//                unsavedCount = 0;
+//            }
+        }
+    }];
+}
+
+- (void)oa_removeOldRecentContactList {
+    [self scheduleBlock:^{
+        NSManagedObjectContext *moc = [self managedObjectContext];
+        
+        NSFetchRequest *fetchRecentChatsRequest = [[NSFetchRequest alloc] init];
+        fetchRecentChatsRequest.entity = [NSEntityDescription entityForName:@"XMPPMessageArchiving_Contact_CoreDataObject" inManagedObjectContext:moc];
+        fetchRecentChatsRequest.includesPropertyValues = false;
+        
+        NSError *error = nil;
+        NSArray *allRecentChats = [moc executeFetchRequest:fetchRecentChatsRequest error:&error];
+        
+//        NSUInteger unsavedCount = [self numberOfUnsavedChanges];
+        
+        for (NSManagedObject *chat in allRecentChats) {
+            [moc deleteObject: chat];
+            
+//            if (++unsavedCount >= saveThreshold) {
+//                [self save];
+//                unsavedCount = 0;
+//            }
+        }
+    }];
+}
+
+- (void)oa_addNewRecentContactList:(NSArray *)chats {
+    
+}
+
 @end

@@ -745,13 +745,36 @@ static NSMutableSet *databaseFileNames;
             
             // http://stackoverflow.com/questions/3923826/nsfetchedresultscontroller-with-predicate-ignores-changes-merged-from-different
             for (NSManagedObject *object in [notification userInfo][NSUpdatedObjectsKey]) {
-                [[mainThreadManagedObjectContext objectWithID:[object objectID]] willAccessValueForKey:nil];
+// oasis <
+//                [[mainThreadManagedObjectContext objectWithID:[object objectID]] willAccessValueForKey:nil];
+                
+                @try {
+                    [[mainThreadManagedObjectContext objectWithID:[object objectID]] willAccessValueForKey:nil];
+                } @catch (NSException *e) {
+                    XMPPLogError(@"Oasis >>> Error finding object: %@: %@", [e name], [e reason]);
+                } @finally {
+                    
+                }
+// oasis >
             }
 			
 			[mainThreadManagedObjectContext mergeChangesFromContextDidSaveNotification:notification];
 			[self mainThreadManagedObjectContextDidMergeChanges];
 		});
     }
+// oasis
+    // merge changes into managedObjectContext which is running in the background thread
+    else if (sender != managedObjectContext &&
+             (sender.persistentStoreCoordinator == managedObjectContext.persistentStoreCoordinator))
+    {
+        XMPPLogVerbose(@"%@: %@ - Merging changes into managedObjectContext", THIS_FILE, THIS_METHOD);
+        
+        for (NSManagedObject *object in [notification userInfo][NSUpdatedObjectsKey]) {
+            [[managedObjectContext objectWithID:[object objectID]] willAccessValueForKey:nil];
+        }
+        [managedObjectContext mergeChangesFromContextDidSaveNotification:notification];
+    }
+// oasis
 }
 
 - (BOOL)autoRemovePreviousDatabaseFile
