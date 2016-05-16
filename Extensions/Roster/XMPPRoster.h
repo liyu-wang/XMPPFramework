@@ -377,6 +377,13 @@
 **/
 - (void)xmppRoster:(XMPPRoster *)sender didReceivePresenceSubscriptionRequest:(XMPPPresence *)presence;
 
+// oasis <
+/**
+ the reversed subscribe presence sent by the receiver when they like back
+**/
+- (void)xmppRoster:(XMPPRoster *)sender didReceiveReversedSubscribePresence:(XMPPPresence *)presence;
+// oasis >
+
 /**
  * Sent when a Roster Push is received as specified in Section 2.1.6 of RFC 6121.
 **/

@@ -259,6 +259,7 @@ static XMPPRosterCoreDataStorage *sharedInstance;
 // oasis <
 
 - (XMPPUserCoreDataStorageObject *)oa_userForUsername:(NSString *)username
+                                           xmppStream:(XMPPStream *)stream
                                  managedObjectContext:(NSManagedObjectContext *)moc {
     
     // This is a public method, so it may be invoked on any thread/queue.
@@ -271,7 +272,12 @@ static XMPPRosterCoreDataStorage *sharedInstance;
     NSEntityDescription *entity = [NSEntityDescription entityForName:@"XMPPUserCoreDataStorageObject"
                                               inManagedObjectContext:moc];
     
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"displayName == %@", username];;
+    NSPredicate *predicate;
+    if (stream == nil)
+        predicate = [NSPredicate predicateWithFormat:@"displayName == %@", username];
+    else
+        predicate = [NSPredicate predicateWithFormat:@"displayName == %@ AND streamBareJidStr == %@",
+                     username, [[self myJIDForXMPPStream:stream] bare]];
     
     NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
     [fetchRequest setEntity:entity];

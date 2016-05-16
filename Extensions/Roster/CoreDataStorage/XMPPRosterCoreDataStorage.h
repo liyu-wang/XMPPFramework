@@ -74,6 +74,7 @@
 
 // oasis <
 - (XMPPUserCoreDataStorageObject *)oa_userForUsername:(NSString *)username
+                                           xmppStream:(XMPPStream *)stream
                                  managedObjectContext:(NSManagedObjectContext *)moc;
 // oasis >
 

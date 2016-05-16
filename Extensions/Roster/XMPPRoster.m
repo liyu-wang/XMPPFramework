@@ -873,7 +873,9 @@ enum XMPPRosterFlags
 		XMPPJID *userJID = [[presence from] bareJID];
 		
 		BOOL knownUser = [xmppRosterStorage userExistsWithJID:userJID xmppStream:xmppStream];
-		
+
+// oasis <
+/*
 		if (knownUser && [self autoAcceptKnownPresenceSubscriptionRequests])
 		{
 			// Presence subscription request from someone who's already in our roster.
@@ -884,6 +886,12 @@ enum XMPPRosterFlags
 			XMPPPresence *response = [XMPPPresence presenceWithType:@"subscribed" to:userJID];
 			[xmppStream sendElement:response];
 		}
+ */
+        if (knownUser) {
+            [multicastDelegate xmppRoster:self didReceiveReversedSubscribePresence:presence];
+        }
+// oasis >
+        
 		else
 		{
 			// Presence subscription request from someone who's NOT in our roster
