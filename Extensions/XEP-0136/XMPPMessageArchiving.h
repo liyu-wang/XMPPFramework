@@ -143,7 +143,7 @@
 
 - (void)oa_removeOldArchivedMessagesWithJid:(NSString *)bareJid;
 
-- (void)oa_removeOldRecentContactList;
+- (void)oa_removeOldRecentContactListWithJid:(NSString *)bareJid;
 
 - (void)oa_addNewRecentContactList:(NSArray *)chats;
 

@@ -767,7 +767,7 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
     if ([iq.type isEqualToString:@"result"]) {
         
         // clear old conversations
-        [self.xmppMessageArchivingStorage oa_removeOldRecentContactList];
+        [self.xmppMessageArchivingStorage oa_removeOldRecentContactListWithJid:self.xmppStream.myJID.bare];
         
         NSXMLElement *listElement = [iq elementForName:@"list" xmlns:XMLNS_XMPP_ARCHIVE];
         NSArray *chats = [listElement elementsForName:@"chat"];

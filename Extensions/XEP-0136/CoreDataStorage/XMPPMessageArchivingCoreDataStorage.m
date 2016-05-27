@@ -771,7 +771,7 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
         NSFetchRequest *fetchArchivedMessagesRequest = [[NSFetchRequest alloc] init];
         fetchArchivedMessagesRequest.entity = [NSEntityDescription entityForName:@"XMPPMessageArchiving_Message_CoreDataObject" inManagedObjectContext:moc];
         fetchArchivedMessagesRequest.predicate = [NSPredicate predicateWithFormat:@"bareJidStr == %@", bareJid];
-        fetchArchivedMessagesRequest.includesPropertyValues = false;
+        fetchArchivedMessagesRequest.includesPropertyValues = NO;
         
         NSError *error = nil;
         NSArray *allMessages = [moc executeFetchRequest:fetchArchivedMessagesRequest error:&error];
@@ -789,13 +789,14 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
     }];
 }
 
-- (void)oa_removeOldRecentContactList {
+- (void)oa_removeOldRecentContactListWithJid:(NSString *)bareJid {
     [self scheduleBlock:^{
         NSManagedObjectContext *moc = [self managedObjectContext];
         
         NSFetchRequest *fetchRecentChatsRequest = [[NSFetchRequest alloc] init];
         fetchRecentChatsRequest.entity = [NSEntityDescription entityForName:@"XMPPMessageArchiving_Contact_CoreDataObject" inManagedObjectContext:moc];
-        fetchRecentChatsRequest.includesPropertyValues = false;
+        fetchRecentChatsRequest.predicate = [NSPredicate predicateWithFormat:@"streamBareJidStr == %@", bareJid];
+        fetchRecentChatsRequest.includesPropertyValues = NO;
         
         NSError *error = nil;
         NSArray *allRecentChats = [moc executeFetchRequest:fetchRecentChatsRequest error:&error];
