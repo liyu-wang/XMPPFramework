@@ -31,7 +31,8 @@ NSString *const OAXMPPMessageArchivingErrorDomain = @"OAXMPPMessageArchivingErro
 
 typedef enum OAXMPPMessageArchivingQueryInfoType {
     FetchConversationList,
-    FetchArchivedMessages
+    FetchArchivedMessages,
+    RemoveArchivedMessages,
 } OAXMPPMessageArchivingQueryInfoType;
 
 @interface OAXMPPMessageArchivingQueryInfo : NSObject
@@ -450,6 +451,9 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
                 case FetchArchivedMessages:
                     [self oa_processArchivedMessagesIQ:iq witnInfo:queryInfo];
                     break;
+                case RemoveArchivedMessages:
+                    [self oa_processRemoveArchivedMessagesResultIQ:iq witnInfo:queryInfo];
+                    break;
             }
             
             [self removeQueryInfo:queryInfo withKey:[iq elementID]];
@@ -575,6 +579,7 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
             [multicastDelegate messageArchiving:self failedToFetchConversationList:error];
             break;
         case FetchArchivedMessages:
+        case RemoveArchivedMessages:
             if (queryInfo.completion) {
                 queryInfo.completion(error);
             }
@@ -708,6 +713,46 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
             i++;
         }
         
+        if (queryInfo.completion) {
+            queryInfo.completion(nil);
+        }
+    } else {
+        if (queryInfo.completion) {
+            queryInfo.completion([NSError errorWithDomain:OAXMPPMessageArchivingErrorDomain code:OAXMPPMessageArchivingErrorCodeServerError userInfo:nil]);
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#pragma mark - OASIS Remove archived messages
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+- (void)oa_removeArchivedMessagesWithJid:(NSString *)bareJid completion:(void(^)(NSError *error))block {
+    XMPPLogTrace();
+    
+    // <iq type='set' id='1950:remove' xmlns='jabber:client'>
+    // <remove xmlns='urn:xmpp:archive' with='114@talk1.qa.oasisactive.net'/>
+    // </iq>
+    NSXMLElement *removeElement = [NSXMLElement elementWithName:@"remove" xmlns:@"urn:xmpp:archive"];
+    [removeElement addAttributeWithName:@"with" stringValue:bareJid];
+    
+    NSString *uuid = [xmppStream generateUUID];
+    
+    XMPPIQ *iq = [XMPPIQ iqWithType:@"set" elementID:uuid child:removeElement];
+    [iq addAttributeWithName:@"xmlns" stringValue:@"jabber:client"];
+    
+    [self.xmppStream sendElement:iq];
+    
+    OAXMPPMessageArchivingQueryInfo *queryInfo = [OAXMPPMessageArchivingQueryInfo queryInfoWithType:RemoveArchivedMessages];
+    [queryInfo setCompletion:block];
+    [self addQueryInfo:queryInfo withKey:uuid];
+}
+
+- (void)oa_processRemoveArchivedMessagesResultIQ:(XMPPIQ *)iq witnInfo:(OAXMPPMessageArchivingQueryInfo *)queryInfo {
+    
+    // <iq to="103@talk1.qa.oasisactive.net/OASIS_FSC" type="result" id="1950:remove" />
+    
+    if ([iq.type isEqualToString:@"result"]) {
         if (queryInfo.completion) {
             queryInfo.completion(nil);
         }
