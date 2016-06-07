@@ -534,7 +534,9 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
         XMPPMessageArchiving_Contact_CoreDataObject *recentContact = [self oa_recentContactWithUsername:username
                                                                                        streamBareJidStr:streamBareJidStr
                                                                                    managedObjectContext:[self managedObjectContext]];
-        [[self managedObjectContext] deleteObject:recentContact];
+        if (recentContact) {
+            [[self managedObjectContext] deleteObject:recentContact];
+        }
     }];
 }
 
