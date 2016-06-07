@@ -140,13 +140,9 @@
               saveMessage:(BOOL)saveMessageFlag
                xmppStream:(XMPPStream *)xmppStream;
 
-- (void)oa_markRecentContactMessageWithId:(id)managedObjId asRead:(BOOL)read;
+- (void)oa_removeOldArchivedMessagesWithJid:(NSString *)bareJid streamJidStr:(NSString *)streamJid;
 
-- (void)oa_removeOldArchivedMessagesWithJid:(NSString *)bareJid;
-
-- (void)oa_removeOldRecentContactListWithJid:(NSString *)bareJid;
-
-- (void)oa_addNewRecentContactList:(NSArray *)chats;
+- (void)oa_removeOldRecentContactListWithStreamJidStr:(NSString *)streamJid;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

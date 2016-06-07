@@ -489,10 +489,18 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
 #pragma mark - Oasis
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-- (XMPPMessageArchiving_Contact_CoreDataObject *)oa_recentContactWithUsername:(NSString *)username managedObjectContext:(NSManagedObjectContext *)moc {
+- (XMPPMessageArchiving_Contact_CoreDataObject *)oa_recentContactWithUsername:(NSString *)username
+                                                             streamBareJidStr:(NSString *)streamBareJidStr
+                                                         managedObjectContext:(NSManagedObjectContext *)moc {
     NSEntityDescription *entity = [self contactEntity:moc];
     
-    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"username == %@", username];
+    NSPredicate *predicate;
+    
+    if (streamBareJidStr) {
+        predicate = [NSPredicate predicateWithFormat:@"username == %@ AND streamBareJidStr == %@", username, streamBareJidStr];
+    } else {
+        predicate = [NSPredicate predicateWithFormat:@"username == %@", username];
+    }
     
     NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
     [fetchRequest setEntity:entity];
@@ -511,6 +519,23 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
     {
         return (XMPPMessageArchiving_Contact_CoreDataObject *)[results lastObject];
     }
+}
+
+- (void)oa_markRecentContactMessageWithId:(id)managedObjId asRead:(BOOL)read {
+    [self executeBlock:^{
+        NSManagedObject *mObj = [[self managedObjectContext] objectWithID:managedObjId];
+        [mObj setValue:[NSNumber numberWithBool:read] forKey:@"isRead"];
+    }];
+}
+
+- (void)oa_deleteRecentContactMessageWithUsername:(NSString *)username
+                                 streamBareJidStr:(NSString *)streamBareJidStr {
+    [self executeBlock:^{
+        XMPPMessageArchiving_Contact_CoreDataObject *recentContact = [self oa_recentContactWithUsername:username
+                                                                                       streamBareJidStr:streamBareJidStr
+                                                                                   managedObjectContext:[self managedObjectContext]];
+        [[self managedObjectContext] deleteObject:recentContact];
+    }];
 }
 
 - (void)oa_archiveMessage:(XMPPMessage *)message
@@ -679,6 +704,7 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
             // use username rather than jid to find the recent contact
             // because the conversation list doesn't return jid
             XMPPMessageArchiving_Contact_CoreDataObject *contact = [self oa_recentContactWithUsername:username
+                                                                                     streamBareJidStr:myJid.bare
                                                                                  managedObjectContext:moc];
             
             if ([message wasDelayed]) {
@@ -757,20 +783,13 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
 
 }
 
-- (void)oa_markRecentContactMessageWithId:(id)managedObjId asRead:(BOOL)read {
-    [self scheduleBlock:^{
-        NSManagedObject *mObj = [[self managedObjectContext] objectWithID:managedObjId];
-        [mObj setValue:[NSNumber numberWithBool:read] forKey:@"isRead"];
-    }];
-}
-
-- (void)oa_removeOldArchivedMessagesWithJid:(NSString *)bareJid {
+- (void)oa_removeOldArchivedMessagesWithJid:(NSString *)bareJid streamJidStr:(NSString *)streamJid {
     [self scheduleBlock:^{
         NSManagedObjectContext *moc = [self managedObjectContext];
         
         NSFetchRequest *fetchArchivedMessagesRequest = [[NSFetchRequest alloc] init];
         fetchArchivedMessagesRequest.entity = [NSEntityDescription entityForName:@"XMPPMessageArchiving_Message_CoreDataObject" inManagedObjectContext:moc];
-        fetchArchivedMessagesRequest.predicate = [NSPredicate predicateWithFormat:@"bareJidStr == %@", bareJid];
+        fetchArchivedMessagesRequest.predicate = [NSPredicate predicateWithFormat:@"bareJidStr == %@ && streamBareJidStr == %@", bareJid, streamJid];
         fetchArchivedMessagesRequest.includesPropertyValues = NO;
         
         NSError *error = nil;
@@ -789,13 +808,13 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
     }];
 }
 
-- (void)oa_removeOldRecentContactListWithJid:(NSString *)bareJid {
+- (void)oa_removeOldRecentContactListWithStreamJidStr:(NSString *)streamJid {
     [self scheduleBlock:^{
         NSManagedObjectContext *moc = [self managedObjectContext];
         
         NSFetchRequest *fetchRecentChatsRequest = [[NSFetchRequest alloc] init];
         fetchRecentChatsRequest.entity = [NSEntityDescription entityForName:@"XMPPMessageArchiving_Contact_CoreDataObject" inManagedObjectContext:moc];
-        fetchRecentChatsRequest.predicate = [NSPredicate predicateWithFormat:@"streamBareJidStr == %@", bareJid];
+        fetchRecentChatsRequest.predicate = [NSPredicate predicateWithFormat:@"streamBareJidStr == %@", streamJid];
         fetchRecentChatsRequest.includesPropertyValues = NO;
         
         NSError *error = nil;
@@ -812,10 +831,6 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
 //            }
         }
     }];
-}
-
-- (void)oa_addNewRecentContactList:(NSArray *)chats {
-    
 }
 
 @end

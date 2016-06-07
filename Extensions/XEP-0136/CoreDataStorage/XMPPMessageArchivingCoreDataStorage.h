@@ -49,8 +49,16 @@
                                                   managedObjectContext:(NSManagedObjectContext *)moc;
 
 // oasis <
+
 - (XMPPMessageArchiving_Contact_CoreDataObject *)oa_recentContactWithUsername:(NSString *)username
+                                                             streamBareJidStr:(NSString *)streamBareJidStr
                                                          managedObjectContext:(NSManagedObjectContext *)moc;
+
+- (void)oa_markRecentContactMessageWithId:(id)managedObjId asRead:(BOOL)read;
+
+- (void)oa_deleteRecentContactMessageWithUsername:(NSString *)username
+                                 streamBareJidStr:(NSString *)streamBareJidStr;
+
 // oasis >
 
 /* Inherited from XMPPCoreDataStorage

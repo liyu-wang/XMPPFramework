@@ -656,7 +656,7 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
         NSXMLElement *chatElement = [iq elementForName:@"chat" xmlns:XMLNS_XMPP_ARCHIVE];
         NSString *withBareJid = [chatElement attributeStringValueForName:@"with"];
         
-        [xmppMessageArchivingStorage oa_removeOldArchivedMessagesWithJid:withBareJid];
+        [xmppMessageArchivingStorage oa_removeOldArchivedMessagesWithJid:withBareJid streamJidStr:self.xmppStream.myJID.bare];
         
         NSString *referenceTimeStr = [chatElement attributeStringValueForName:@"start"];
         NSTimeInterval ref = [[XMPPDateTimeProfiles parseDateTime:referenceTimeStr] timeIntervalSince1970];
@@ -812,7 +812,7 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
     if ([iq.type isEqualToString:@"result"]) {
         
         // clear old conversations
-        [self.xmppMessageArchivingStorage oa_removeOldRecentContactListWithJid:self.xmppStream.myJID.bare];
+        [self.xmppMessageArchivingStorage oa_removeOldRecentContactListWithStreamJidStr:self.xmppStream.myJID.bare];
         
         NSXMLElement *listElement = [iq elementForName:@"list" xmlns:XMLNS_XMPP_ARCHIVE];
         NSArray *chats = [listElement elementsForName:@"chat"];
