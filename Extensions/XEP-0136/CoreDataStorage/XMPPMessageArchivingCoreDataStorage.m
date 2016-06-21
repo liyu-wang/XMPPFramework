@@ -753,7 +753,7 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
             }
             
             if (msgType == OAXMPPMessageTypePhoto) {
-                contact.mostRecentMessageBody = @"[image]";
+                contact.mostRecentMessageBody = isOutgoing ? @"contacts_photo_sent" : @"contacts_photo_received";
             } else if (msgType == OAXMPPMessageTypeSystem) {
                 contact.mostRecentMessageBody = [message oa_systemMessageContent];
             } else {
