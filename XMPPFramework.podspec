@@ -57,6 +57,13 @@ s.subspec 'Core' do |core|
   core.dependency 'KissXML/libxml_module', '~> 5.0.3'
 end
 
+s.subspec 'Oasis' do |ss|
+ss.source_files = 'Extensions/Oasis/**/*.{h,m}'
+ss.dependency 'XMPPFramework/Roster'
+ss.dependency 'XMPPFramework/XEP-0136'
+ss.prefix_header_contents = "#define HAVE_XMPP_SUBSPEC_#{name.upcase.sub('-', '_')}"
+end
+
 s.subspec 'BandwidthMonitor' do |ss|
 ss.source_files = 'Extensions/BandwidthMonitor/**/*.{h,m}'
 ss.dependency 'XMPPFramework/Core'
@@ -331,6 +338,7 @@ end
 
 s.subspec 'All' do |ss|
   ss.dependency 'XMPPFramework/Core'
+  ss.dependency 'XMPPFramework/Oasis'
   ss.dependency 'XMPPFramework/BandwidthMonitor'
   ss.dependency 'XMPPFramework/CoreDataStorage'
   ss.dependency 'XMPPFramework/FileTransfer'
