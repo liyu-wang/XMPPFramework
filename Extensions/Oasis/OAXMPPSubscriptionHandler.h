@@ -81,5 +81,6 @@ typedef NS_ENUM(NSInteger, OALinkStatus) {
 - (void)xmppSubscriptionHandler:(OAXMPPSubscriptionHandler *)sender sentSubscriptionBeenRejectedByJid:(XMPPJID *)jid;
 
 - (void)xmppSubscriptionHandler:(OAXMPPSubscriptionHandler *)sender didUnsubscribeToJid:(XMPPJID *)jid;
+- (void)xmppSubscriptionHandler:(OAXMPPSubscriptionHandler *)sender didReceiveUnsubscriptionFromJid:(XMPPJID *)jid;
 
 @end

@@ -221,8 +221,8 @@ NSString *const XMPPSubscriptionErrorDomain = @"XMPPSubscriptionErrorDomain";
         if ([subscription isEqualToString:@"remove"]) {
             XMPPJID *jid = [XMPPJID jidWithString:[[item attributeForName:@"jid"] stringValue]];
             
-            dispatch_async(dispatch_get_main_queue(), ^{
-                OALinkStatus linkStatus = [self linkStatusForJid:jid];
+            dispatch_async([self rosterStorageQueue], ^{
+                OALinkStatus linkStatus = [self bgThreadLinkStatusForJid:jid];
                 if (linkStatus == OALinkStatusReceived) {
                     dispatch_async(moduleQueue, ^{
                         [_receivedSubscriptionJidSet removeObject:jid];
@@ -239,6 +239,14 @@ NSString *const XMPPSubscriptionErrorDomain = @"XMPPSubscriptionErrorDomain";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - Private API
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+- (OALinkStatus)bgThreadLinkStatusForJid:(XMPPJID *)JID {
+    return [self linkStatusForJid:JID managedObjectContext:[_rosterStorage valueForKey:@"managedObjectContext"]];
+}
+
+- (dispatch_queue_t)rosterStorageQueue {
+    return [_rosterStorage valueForKey:@"storageQueue"];
+}
 
 - (void)processAfterLoginSubscribePresence:(XMPPPresence *)presence {
     XMPPJID *jid = [presence from];
@@ -272,6 +280,14 @@ NSString *const XMPPSubscriptionErrorDomain = @"XMPPSubscriptionErrorDomain";
 - (void)processLiveUnsubscribePresence:(XMPPPresence *)presence {
     XMPPJID *jid = [presence from];
     [_receivedUnsubscriptionJidSet addObject:jid];
+    
+    dispatch_async([self rosterStorageQueue], ^{
+        OALinkStatus status = [self bgThreadLinkStatusForJid:jid];
+        if (status == OALinkStatusDeletedYou || status == OALinkStatusContact) {
+            // if the roster db hasn't been updated in time, the status might still be contact
+            [multicastDelegate xmppSubscriptionHandler:self didReceiveUnsubscriptionFromJid:jid];
+        }
+    });
 }
 
 - (void)processSubscribedPresence:(XMPPPresence *)presence {
@@ -279,9 +295,11 @@ NSString *const XMPPSubscriptionErrorDomain = @"XMPPSubscriptionErrorDomain";
 }
 
 - (void)processUnsubscribedPresence:(XMPPPresence *)presence {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        OALinkStatus linkStatus = [self linkStatusForJid:presence.from];
-        if (linkStatus == OALinkStatusNone || OALinkStatusSent) {
+    dispatch_async([self rosterStorageQueue], ^{
+        OALinkStatus linkStatus = [self bgThreadLinkStatusForJid:presence.from];
+//        if (linkStatus == OALinkStatusNone || OALinkStatusSent) {
+        if (linkStatus == OALinkStatusNone) {
+            // when unsubscribed arrives the subscription should be "none" now
             dispatch_async(moduleQueue, ^{
                 // sent like been rejected event
                 [multicastDelegate xmppSubscriptionHandler:self sentSubscriptionBeenRejectedByJid:presence.from];
@@ -394,11 +412,15 @@ NSString *const XMPPSubscriptionErrorDomain = @"XMPPSubscriptionErrorDomain";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 - (OALinkStatus)linkStatusForJid:(XMPPJID *)JID {
+    return [self linkStatusForJid:JID managedObjectContext:_rosterStorage.mainThreadManagedObjectContext];
+}
+
+- (OALinkStatus)linkStatusForJid:(XMPPJID *)JID managedObjectContext:(NSManagedObjectContext *)context {
     if (JID == nil || _roster == nil) {
         return OALinkStatusNone;
     }
     
-    XMPPUserCoreDataStorageObject *user = [_rosterStorage userForJID:JID xmppStream:self.xmppStream managedObjectContext:_rosterStorage.mainThreadManagedObjectContext];
+    XMPPUserCoreDataStorageObject *user = [_rosterStorage userForJID:JID xmppStream:self.xmppStream managedObjectContext:context];
     if (user) {
         NSString *subscription = user.subscription;
         NSString *ask = user.ask;
