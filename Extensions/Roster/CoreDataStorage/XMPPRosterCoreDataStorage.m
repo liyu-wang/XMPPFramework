@@ -274,9 +274,9 @@ static XMPPRosterCoreDataStorage *sharedInstance;
     
     NSPredicate *predicate;
     if (stream == nil)
-        predicate = [NSPredicate predicateWithFormat:@"displayName == %@", username];
+        predicate = [NSPredicate predicateWithFormat:@"displayName ==[c] %@", username];
     else
-        predicate = [NSPredicate predicateWithFormat:@"displayName == %@ AND streamBareJidStr == %@",
+        predicate = [NSPredicate predicateWithFormat:@"displayName ==[c] %@ AND streamBareJidStr == %@",
                      username, [[self myJIDForXMPPStream:stream] bare]];
     
     NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
