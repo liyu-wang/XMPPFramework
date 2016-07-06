@@ -709,10 +709,20 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
                                                                                      streamBareJidStr:myJid.bare
                                                                                  managedObjectContext:moc];
             
-            if ([message wasDelayed]) {
-                // earlier delayed message shouldn't override later delayed message in conversation list
+            if ([message wasDelayed] && contact != nil) {
+                // user may have sent a view node stanza for this delayed message before, so there may be a same copy
+                // of the message in the chat history. in this case we need to compare the time of these two messages
                 NSComparisonResult *result = [contact.mostRecentMessageTimestamp compare:[message delayedDeliveryDate]];
                 if (result == NSOrderedDescending || result == NSOrderedSame) {
+                    // if the delayed message has same time as the most recent archived message, we just
+                    // mark the most recent archived message as unread
+                    contact.isRead = [NSNumber numberWithBool:NO];
+                    
+                    XMPPLogVerbose(@"Updating contact...");
+                    
+                    [contact didUpdateObject];       // Override hook
+                    [self didUpdateContact:contact]; // Override hook
+                    
                     return;
                 }
             }
