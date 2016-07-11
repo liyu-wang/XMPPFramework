@@ -483,6 +483,9 @@ NSString *const XMPPSubscriptionErrorDomain = @"XMPPSubscriptionErrorDomain";
             
             void (^pHandler)(XMPPIQ *, id <XMPPTrackingInfo>) = ^(XMPPIQ *iq, id <XMPPTrackingInfo> info) {
                 if (iq) {
+                    // if subscribe to a jid who has sent unsubscribe to you, we need to remove the jid from the
+                    // receivedUnsubscriptionJidSet, otherwise it will affect the result of the linkStatusForJid method
+                    [_receivedUnsubscriptionJidSet removeObject:jid];
                     [multicastDelegate xmppSubscriptionHandler:self didSendSubscriptionToJid:jid];
                     completionBlock(YES);
                 } else {
