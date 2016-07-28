@@ -569,7 +569,7 @@ typedef enum XMPPMessageRetrievalQueryInfoType {
             }
         }
         
-        [multicastDelegate offlineMessageRetrieval:self didReceiveMostRecentOfflineMessageHeaders:_mostRecentOfflineMessageHeaders];
+        [multicastDelegate offlineMessageRetrieval:self didReceiveOfflineMessageHeadersDict:_offlineMessageHeaderDic mostRecentOfflineMessageHeaders:_mostRecentOfflineMessageHeaders];
     } else {
         [multicastDelegate offlineMessageRetrieval:self failedToReceiveMostRecentOfflineMessageHeaders:nil];
     }

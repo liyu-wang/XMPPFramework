@@ -63,7 +63,7 @@ typedef enum OAXMPPMessageRetrievalErrorCode {
 @protocol OAXMPPOfflineMessageRetrievalDelegate <NSObject>
 @optional
 
-- (void)offlineMessageRetrieval:(OAXMPPOfflineMessageRetrieval *)sender didReceiveMostRecentOfflineMessageHeaders:(NSArray *)items;
+- (void)offlineMessageRetrieval:(OAXMPPOfflineMessageRetrieval *)sender didReceiveOfflineMessageHeadersDict:(NSDictionary *)headersDict mostRecentOfflineMessageHeaders:(NSArray *)items;
 - (void)offlineMessageRetrieval:(OAXMPPOfflineMessageRetrieval *)sender failedToReceiveMostRecentOfflineMessageHeaders:(NSError *)error;
 
 - (void)offlineMessageRetrieval:(OAXMPPOfflineMessageRetrieval *)sender didSendRetrievalForOfflineMessagesWithHeaders:(NSArray *)headers;
