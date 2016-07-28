@@ -280,8 +280,8 @@
             return OAXMPPMessageTypePhoto;
         }
         
-        if ([self oa_isOasisAlert]) {
-            return OAXMPPMessageTypeAlert;
+        if ([self oa_isOasisCommand]) {
+            return OAXMPPMessageTypeOasisCMD;
         }
         
         if ([self oa_isSystemMessage]) {
@@ -292,7 +292,7 @@
     return OAXMPPMessageTypeOthers;
 }
 
-- (BOOL)oa_isOasisAlert {
+- (BOOL)oa_isOasisCommand {
     return ([self elementForName:@"oasis"] != nil);
 }
 
