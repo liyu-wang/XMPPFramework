@@ -16,7 +16,7 @@
 
 // liyu <
 @property (nonatomic, strong) NSString * username;
-@property (nonatomic, strong) NSNumber * isRead;
+@property (nonatomic, strong) NSNumber * unreadCount;
 // liyu >
 
 /**

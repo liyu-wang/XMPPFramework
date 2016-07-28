@@ -19,7 +19,7 @@
 @dynamic streamBareJidStr;
 // liyu <
 @dynamic username;
-@dynamic isRead;
+@dynamic unreadCount;
 // liyu >
 
 #pragma mark Transient bareJid

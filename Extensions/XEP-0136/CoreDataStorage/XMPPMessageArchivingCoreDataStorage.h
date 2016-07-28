@@ -54,7 +54,7 @@
                                                              streamBareJidStr:(NSString *)streamBareJidStr
                                                          managedObjectContext:(NSManagedObjectContext *)moc;
 
-- (void)oa_markRecentContactMessageWithId:(id)managedObjId asRead:(BOOL)read;
+- (void)oa_updateUnreadCount:(NSInteger)unreadCount forRecentContactWithId:(id)managedObjId;
 
 - (void)oa_deleteRecentContactMessageWithUsername:(NSString *)username
                                  streamBareJidStr:(NSString *)streamBareJidStr;

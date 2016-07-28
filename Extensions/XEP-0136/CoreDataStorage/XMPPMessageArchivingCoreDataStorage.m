@@ -521,10 +521,10 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
     }
 }
 
-- (void)oa_markRecentContactMessageWithId:(id)managedObjId asRead:(BOOL)read {
+- (void)oa_updateUnreadCount:(NSInteger)unreadCount forRecentContactWithId:(id)managedObjId {
     [self executeBlock:^{
         NSManagedObject *mObj = [[self managedObjectContext] objectWithID:managedObjId];
-        [mObj setValue:[NSNumber numberWithBool:read] forKey:@"isRead"];
+        [mObj setValue:[NSNumber numberWithInteger:unreadCount] forKey:@"unreadCount"];
     }];
 }
 
@@ -716,7 +716,7 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
                 if (result == NSOrderedDescending || result == NSOrderedSame) {
                     // if the delayed message has same time as the most recent archived message, we just
                     // mark the most recent archived message as unread
-                    contact.isRead = [NSNumber numberWithBool:NO];
+//                    contact.isRead = [NSNumber numberWithBool:NO];
                     
                     XMPPLogVerbose(@"Updating contact...");
                     
@@ -771,7 +771,10 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
             }
             
             contact.mostRecentMessageOutgoing = [NSNumber numberWithBool:isOutgoing];
-            contact.isRead = [NSNumber numberWithBool:read];
+            
+            if (!read && !message.wasDelayed) {
+                contact.unreadCount = [NSNumber numberWithInt:contact.unreadCount.integerValue + 1];
+            }
             
             XMPPLogVerbose(@"New contact: %@", contact);
             

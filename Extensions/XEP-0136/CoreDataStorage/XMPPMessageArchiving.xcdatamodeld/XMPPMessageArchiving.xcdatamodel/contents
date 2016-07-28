@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10171" systemVersion="15E65" minimumToolsVersion="Automatic">
+<model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="10174" systemVersion="15G31" minimumToolsVersion="Automatic">
     <entity name="XMPPMessageArchiving_Contact_CoreDataObject" representedClassName="XMPPMessageArchiving_Contact_CoreDataObject" syncable="YES">
         <attribute name="bareJid" optional="YES" transient="YES" syncable="YES"/>
         <attribute name="bareJidStr" optional="YES" attributeType="String" indexed="YES" syncable="YES"/>
-        <attribute name="isRead" attributeType="Boolean" defaultValueString="YES" syncable="YES"/>
         <attribute name="mostRecentMessageBody" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="mostRecentMessageOutgoing" attributeType="Boolean" defaultValueString="NO" syncable="YES"/>
         <attribute name="mostRecentMessageTimestamp" optional="YES" attributeType="Date" indexed="YES" syncable="YES"/>
         <attribute name="streamBareJidStr" attributeType="String" indexed="YES" syncable="YES"/>
+        <attribute name="unreadCount" attributeType="Integer 32" defaultValueString="YES" syncable="YES"/>
         <attribute name="username" optional="YES" attributeType="String" indexed="YES" syncable="YES"/>
     </entity>
     <entity name="XMPPMessageArchiving_Message_CoreDataObject" representedClassName="XMPPMessageArchiving_Message_CoreDataObject" syncable="YES">
