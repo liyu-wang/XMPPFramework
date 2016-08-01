@@ -32,7 +32,8 @@
 @property (nonatomic, strong) NSString * streamBareJidStr;
 
 // oasis <
-@property (nonatomic) OAXMPPMessageType messageType;
+@property (nonatomic, assign) OAXMPPMessageType messageType;
+@property (nonatomic, strong) NSNumber *messageId;
 // oasis >
 
 /**

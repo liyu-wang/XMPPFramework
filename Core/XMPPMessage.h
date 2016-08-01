@@ -62,6 +62,7 @@ typedef NS_ENUM(int16_t, OAXMPPMessageType) {
     OAXMPPMessageTypeText = 0,
     OAXMPPMessageTypePhoto = 1,
     OAXMPPMessageTypeSystem = 2,
+    OAXMPPMessageTypeReceipt = 3,
     OAXMPPMessageTypeOasisCMD,
     OAXMPPMessageTypeOthers,
 };

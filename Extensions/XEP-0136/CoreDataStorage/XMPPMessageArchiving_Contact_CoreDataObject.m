@@ -17,10 +17,10 @@
 @dynamic mostRecentMessageBody;
 @dynamic mostRecentMessageOutgoing;
 @dynamic streamBareJidStr;
-// liyu <
+// oasis <
 @dynamic username;
 @dynamic unreadCount;
-// liyu >
+// oasis >
 
 #pragma mark Transient bareJid
 

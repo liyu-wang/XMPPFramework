@@ -26,6 +26,7 @@
 
 // oasis <
 @dynamic messageType;
+@dynamic messageId;
 // oasis >
 
 #pragma mark Transient message

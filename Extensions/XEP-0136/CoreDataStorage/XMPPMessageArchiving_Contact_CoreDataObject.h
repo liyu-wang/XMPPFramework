@@ -14,10 +14,10 @@
 
 @property (nonatomic, strong) NSString * streamBareJidStr;
 
-// liyu <
+// oasis <
 @property (nonatomic, strong) NSString * username;
 @property (nonatomic, strong) NSNumber * unreadCount;
-// liyu >
+// oasis >
 
 /**
  * This method is called immediately before the object is inserted into the managedObjectContext.
