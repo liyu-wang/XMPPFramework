@@ -165,7 +165,7 @@ typedef enum OAXMPPMessageArchivingErrorCode {
 @protocol OAXMPPMessageArchivingDelegate <NSObject>
 @optional
 
-- (void)messageArchiving:(XMPPMessageArchiving *)sender didFetchConversationList:(NSArray *)items;
+- (void)messageArchiving:(XMPPMessageArchiving *)sender didFetchConversationsWithUsers:(NSArray *)usernames;
 - (void)messageArchiving:(XMPPMessageArchiving *)sender failedToFetchConversationList:(NSError *)error;
 
 @end

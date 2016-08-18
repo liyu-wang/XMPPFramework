@@ -811,6 +811,8 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
     
     if ([iq.type isEqualToString:@"result"]) {
         
+        NSMutableArray *usernameArray = [@[] mutableCopy];
+        
         // clear old conversations
         [self.xmppMessageArchivingStorage oa_removeOldRecentContactListWithStreamJidStr:self.xmppStream.myJID.bare];
         
@@ -847,9 +849,11 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
             
             // update only the recent contact table
             [xmppMessageArchivingStorage oa_archiveMessage:message timestamp:timeStamp outgoing:outgoing isRead: YES updateRecent:YES saveMessage:NO xmppStream:self.xmppStream];
+            
+            [usernameArray addObject:username];
         }
         
-        [multicastDelegate messageArchiving:self didFetchConversationList:nil];
+        [multicastDelegate messageArchiving:self didFetchConversationsWithUsers:usernameArray];
     } else {
         NSError *error = [NSError errorWithDomain:OAXMPPMessageArchivingErrorDomain code:OAXMPPMessageArchivingErrorCodeServerError userInfo:nil];
         [multicastDelegate messageArchiving:self failedToFetchConversationList: error];
