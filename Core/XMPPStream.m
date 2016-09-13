@@ -210,6 +210,9 @@ enum XMPPStreamConfig
 		
 		// Initialize socket
 		asyncSocket = [[GCDAsyncSocket alloc] initWithDelegate:self delegateQueue:xmppQueue];
+// oasis <
+        asyncSocket.IPv4PreferredOverIPv6 = NO;
+// oasis >
 	}
 	return self;
 }
