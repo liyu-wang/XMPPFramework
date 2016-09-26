@@ -508,7 +508,9 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
 	{
 // oasis <
 //		[xmppMessageArchivingStorage archiveMessage:message outgoing:YES xmppStream:sender];
-        [xmppMessageArchivingStorage oa_archiveMessage:message timestamp:nil outgoing:YES isRead:YES updateRecent:YES saveMessage:YES xmppStream:sender];
+        if (![message hasComposingChatState]) {
+            [xmppMessageArchivingStorage oa_archiveMessage:message timestamp:nil outgoing:YES isRead:YES updateRecent:YES saveMessage:YES xmppStream:sender];
+        }
 // oasis >
 	}
 }
