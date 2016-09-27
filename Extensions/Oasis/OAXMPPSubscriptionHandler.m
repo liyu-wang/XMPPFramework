@@ -499,8 +499,11 @@ NSString *const XMPPSubscriptionErrorDomain = @"XMPPSubscriptionErrorDomain";
                     // if subscribe to a jid who has sent unsubscribe to you, we need to remove the jid from the
                     // receivedUnsubscriptionJidSet, otherwise it will affect the result of the linkStatusForJid method
                     [_receivedUnsubscriptionJidSet removeObject:jid];
-                    [multicastDelegate xmppSubscriptionHandler:self didSendSubscriptionToJid:jid];
-                    completionBlock(YES);
+                    
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), moduleQueue, ^{
+                        [multicastDelegate xmppSubscriptionHandler:self didSendSubscriptionToJid:jid];
+                        completionBlock(YES);
+                    });
                 } else {
                     completionBlock(NO);
                 }
