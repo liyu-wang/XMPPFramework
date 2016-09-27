@@ -49,6 +49,7 @@ typedef NS_ENUM(NSInteger, OALinkStatus) {
 - (instancetype)initWithRoster:(XMPPRoster *)roster;
 
 - (OALinkStatus)linkStatusForJid:(XMPPJID *)JID;
+- (OALinkStatus)backgroundThreadLinkStatusForJid:(XMPPJID *)JID;
 
 - (void)subscribeToJid:(NSString *)bareJid withToken:(NSString *)token defaultGroupName:(NSString *)groupName completion:(void(^)(BOOL))block;
 - (void)cancelSubscriptionToJid:(NSString *)bareJid completion:(void(^)(BOOL))completionBlock;

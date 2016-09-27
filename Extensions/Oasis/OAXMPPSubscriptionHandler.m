@@ -415,6 +415,19 @@ NSString *const XMPPSubscriptionErrorDomain = @"XMPPSubscriptionErrorDomain";
     return [self linkStatusForJid:JID managedObjectContext:_rosterStorage.mainThreadManagedObjectContext];
 }
 
+- (OALinkStatus)backgroundThreadLinkStatusForJid:(XMPPJID *)JID {
+    
+    __block OALinkStatus status = OALinkStatusNone;
+    
+    dispatch_block_t block = ^{
+        status = [self bgThreadLinkStatusForJid:JID];
+    };
+    
+    dispatch_sync([self rosterStorageQueue], block);
+    
+    return status;
+}
+
 - (OALinkStatus)linkStatusForJid:(XMPPJID *)JID managedObjectContext:(NSManagedObjectContext *)context {
     if (JID == nil || _roster == nil) {
         return OALinkStatusNone;
