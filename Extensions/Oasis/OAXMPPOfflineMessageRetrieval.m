@@ -37,15 +37,16 @@ typedef enum XMPPMessageRetrievalQueryInfoType {
 
 @implementation OAXMPPOfflineMessageHeader
 
-+ (OAXMPPOfflineMessageHeader *)headerWithJid:(NSString *)jid node:(NSString *)node {
-    return [[OAXMPPOfflineMessageHeader alloc] initWithJid:jid node:node];
++ (OAXMPPOfflineMessageHeader *)headerWithJid:(NSString *)jid node:(NSString *)node type:(OAXMPPOfflineNodeType)type {
+    return [[OAXMPPOfflineMessageHeader alloc] initWithJid:jid node:node type:type];
 }
 
-- (id)initWithJid:(NSString *)jid node:(NSString *)node {
+- (id)initWithJid:(NSString *)jid node:(NSString *)node type:(OAXMPPOfflineNodeType)type {
     self = [super init];
     if (self) {
         _jidStr = jid;
         _node = node;
+        _type = type;
     }
     return self;
 }
@@ -537,7 +538,12 @@ typedef enum XMPPMessageRetrievalQueryInfoType {
         NSString *node = nil;
         NSString *fromjidStr = nil;
         XMPPJID *jid = nil;
+        NSString *nodeTypeStr = nil;
+        OAXMPPOfflineNodeType nodeType;
         OAXMPPOfflineMessageHeader *header = nil;
+        
+        NSMutableDictionary *offlineMessageOnlyDict = [@{} mutableCopy]; // excludes offline read receipts
+        
         for (NSXMLElement *item in items) {
             toJidStr = [item attributeStringValueForName:@"jid"];
             if ([toJidStr isEqualToString:self.xmppStream.myJID.bare]) {
@@ -547,7 +553,15 @@ typedef enum XMPPMessageRetrievalQueryInfoType {
                 jid = [XMPPJID jidWithString:fromjidStr];
                 fromjidStr = jid.bare;
                 
-                header = [OAXMPPOfflineMessageHeader headerWithJid:fromjidStr node:node];
+                nodeTypeStr = [[item attributeForName:@"type"] stringValue];
+                
+                if ([nodeTypeStr isEqualToString:@"3"]) {
+                    nodeType = OAXMPPOfflineNodeTypeReceipt;
+                } else {
+                    nodeType = OAXMPPOfflineNodeTypeText;
+                }
+                
+                header = [OAXMPPOfflineMessageHeader headerWithJid:fromjidStr node:node type:nodeType];
                 
                 NSMutableArray *array = (NSMutableArray *)_offlineMessageHeaderDic[fromjidStr];
                 if (!array) {
@@ -556,20 +570,31 @@ typedef enum XMPPMessageRetrievalQueryInfoType {
                 }
                 
                 [array addObject:header];
+                
+                // offline messages only dict
+                if (nodeType != OAXMPPOfflineNodeTypeReceipt) {
+                    NSMutableArray *array = (NSMutableArray *)offlineMessageOnlyDict[fromjidStr];
+                    if (!array) {
+                        array = [@[] mutableCopy];
+                        offlineMessageOnlyDict[fromjidStr] = array;
+                    }
+                    
+                    [array addObject:header];
+                }
             }
         }
         
         NSString *aKey;
-        NSEnumerator *keyEnumerator = [_offlineMessageHeaderDic keyEnumerator];
+        NSEnumerator *keyEnumerator = [offlineMessageOnlyDict keyEnumerator];
         
         while ((aKey = [keyEnumerator nextObject]) != nil) {
-            NSArray *array = _offlineMessageHeaderDic[aKey];
+            NSArray *array = offlineMessageOnlyDict[aKey];
             if (array.count > 0) {
                 [_mostRecentOfflineMessageHeaders addObject:[array lastObject]];
             }
         }
         
-        [multicastDelegate offlineMessageRetrieval:self didReceiveOfflineMessageHeadersDict:_offlineMessageHeaderDic mostRecentOfflineMessageHeaders:_mostRecentOfflineMessageHeaders];
+        [multicastDelegate offlineMessageRetrieval:self didReceiveOfflineMessageHeadersDict:offlineMessageOnlyDict mostRecentOfflineMessageHeaders:_mostRecentOfflineMessageHeaders];
     } else {
         [multicastDelegate offlineMessageRetrieval:self failedToReceiveMostRecentOfflineMessageHeaders:nil];
     }

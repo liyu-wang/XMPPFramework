@@ -13,6 +13,13 @@ typedef enum OAXMPPMessageRetrievalErrorCode {
     OAXMPPMessageRetrievalDisconnect
 } OAXMPPMessageRetrievalErrorCode;
 
+typedef enum OAXMPPOfflineNodeType {
+    OAXMPPOfflineNodeTypeText = 0,
+    OAXMPPOfflineNodeTypeImage,
+    OAXMPPOfflineNodeTypeNotification,
+    OAXMPPOfflineNodeTypeReceipt
+} OAXMPPOfflineNodeType;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #pragma mark - OAXMPPOfflineMessageHeader Interface
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -20,8 +27,9 @@ typedef enum OAXMPPMessageRetrievalErrorCode {
 @interface OAXMPPOfflineMessageHeader : NSObject
 @property (nonatomic, strong) NSString *jidStr;
 @property (nonatomic, strong) NSString *node;
+@property (nonatomic, assign) OAXMPPOfflineNodeType type;
 
-+ (OAXMPPOfflineMessageHeader *)headerWithJid:(NSString *)jid node:(NSString *)node;
++ (OAXMPPOfflineMessageHeader *)headerWithJid:(NSString *)jid node:(NSString *)node type: (OAXMPPOfflineNodeType)type;
 
 - (id)initWithJid:(NSString *)jid node:(NSString *)node;
 
