@@ -521,6 +521,38 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
     }
 }
 
+- (XMPPMessageArchiving_Message_CoreDataObject *)oa_messageWithMessageId:(NSString *)messageId
+                                                        streamBareJidStr:(NSString *)streamBareJidStr
+                                                    managedObjectContext:(NSManagedObjectContext *)moc {
+    NSEntityDescription *entity = [self messageEntity:moc];
+    
+    NSPredicate *predicate;
+    
+    if (streamBareJidStr) {
+        predicate = [NSPredicate predicateWithFormat:@"messageId == %@ AND streamBareJidStr == %@", messageId, streamBareJidStr];
+    } else {
+        predicate = [NSPredicate predicateWithFormat:@"messageId == %@", messageId];
+    }
+    
+    NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
+    [fetchRequest setEntity:entity];
+    [fetchRequest setFetchLimit:1];
+    [fetchRequest setPredicate:predicate];
+    
+    NSError *error = nil;
+    NSArray *results = [moc executeFetchRequest:fetchRequest error:&error];
+    
+    if (results == nil)
+    {
+        XMPPLogError(@"%@: %@ - Fetch request error: %@", THIS_FILE, THIS_METHOD, error);
+        return nil;
+    }
+    else
+    {
+        return (XMPPMessageArchiving_Message_CoreDataObject *)[results lastObject];
+    }
+}
+
 - (void)oa_updateUnreadCount:(NSInteger)unreadCount forRecentContactWithId:(id)managedObjId {
     [self executeBlock:^{
         NSManagedObject *mObj = [[self managedObjectContext] objectWithID:managedObjId];
@@ -536,6 +568,19 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
                                                                                    managedObjectContext:[self managedObjectContext]];
         if (recentContact) {
             [[self managedObjectContext] deleteObject:recentContact];
+        }
+    }];
+}
+
+- (void)oa_markAsReadForMessageWithMessageId:(NSString *)messageId
+                            streamBareJidStr:(NSString *)streamBareJidStr {
+    [self scheduleBlock:^{
+        XMPPMessageArchiving_Message_CoreDataObject *message = [self oa_messageWithMessageId:messageId
+                                                                            streamBareJidStr:streamBareJidStr
+                                                                        managedObjectContext:[self managedObjectContext]];
+        
+        if (message) {
+            message.messageId = nil;
         }
     }];
 }
@@ -673,6 +718,8 @@ static XMPPMessageArchivingCoreDataStorage *sharedInstance;
                     archivedMessage.thread = [[message elementForName:@"thread"] stringValue];
                     archivedMessage.isOutgoing = isOutgoing;
                     archivedMessage.isComposing = isComposing;
+                    
+                    archivedMessage.messageId = message.elementID;
                     
                     XMPPLogVerbose(@"New archivedMessage: %@", archivedMessage);
                     

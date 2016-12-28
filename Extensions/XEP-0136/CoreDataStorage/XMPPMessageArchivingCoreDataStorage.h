@@ -54,10 +54,17 @@
                                                              streamBareJidStr:(NSString *)streamBareJidStr
                                                          managedObjectContext:(NSManagedObjectContext *)moc;
 
+- (XMPPMessageArchiving_Message_CoreDataObject *)oa_messageWithMessageId:(NSString *)messageId
+                                                        streamBareJidStr:(NSString *)streamBareJidStr
+                                                    managedObjectContext:(NSManagedObjectContext *)moc;
+
 - (void)oa_updateUnreadCount:(NSInteger)unreadCount forRecentContactWithId:(id)managedObjId;
 
 - (void)oa_deleteRecentContactMessageWithUsername:(NSString *)username
                                  streamBareJidStr:(NSString *)streamBareJidStr;
+
+- (void)oa_markAsReadForMessageWithMessageId:(NSString *)messageId
+                            streamBareJidStr:(NSString *)streamBareJidStr;
 
 // oasis >
 

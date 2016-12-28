@@ -144,6 +144,9 @@
 
 - (void)oa_removeOldRecentContactListWithStreamJidStr:(NSString *)streamJid;
 
+- (void)oa_markAsReadForMessageWithMessageId:(NSString *)messageId
+                            streamBareJidStr:(NSString *)streamBareJidStr;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 @end

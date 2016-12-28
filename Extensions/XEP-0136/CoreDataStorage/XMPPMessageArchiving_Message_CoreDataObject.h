@@ -33,7 +33,7 @@
 
 // oasis <
 @property (nonatomic, assign) OAXMPPMessageType messageType;
-@property (nonatomic, strong) NSNumber *messageId;
+@property (nonatomic, strong) NSString *messageId;
 // oasis >
 
 /**

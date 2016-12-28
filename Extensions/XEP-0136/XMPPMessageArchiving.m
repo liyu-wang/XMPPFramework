@@ -702,6 +702,12 @@ typedef enum OAXMPPMessageArchivingQueryInfoType {
             OAXMPPMessageType oaMsgType = [body attributeIntegerValueForName:@"type" withDefaultValue:OAXMPPMessageTypeText];
             [message oa_addPayload:body.stringValue forMsgType:oaMsgType];
             
+            // add message id if there is a id attribute in body element
+            NSXMLNode *idAttribute = [body attributeForName:@"id"];
+            if (idAttribute) {
+                [message addAttributeWithName:@"id" stringValue:[idAttribute stringValue]];
+            }
+            
             // only update recent for the most recent message
             [xmppMessageArchivingStorage oa_archiveMessage:message
                                                  timestamp:timestamp
