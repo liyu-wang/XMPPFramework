@@ -6,13 +6,14 @@
 //
 //
 
-#import <XMPPFramework/XMPPFramework.h>
+@import XMPPFramework;
 
 @interface XMPPMockStream : XMPPStream
 
+- (void)fakeResponse:(NSXMLElement*)element;
 - (void)fakeIQResponse:(XMPPIQ *) iq;
 - (void)fakeMessageResponse:(XMPPMessage *) message;
 
-@property (nonatomic, copy) void (^elementReceived)(XMPPElement *element);
+@property (nonatomic, copy) void (^elementReceived)(__kindof XMPPElement *element);
 
 @end

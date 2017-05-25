@@ -7,9 +7,6 @@
 //
 
 #import <XCTest/XCTest.h>
-#import "XMPPFramework/XMPPSlot.h"
-#import "XMPPFramework/XMPPHTTPFileUpload.h"
-#import "XMPPFramework/XMPPStream.h"
 #import "XMPPMockStream.h"
 
 @interface XMPPHTTPFileUploadTests: XCTestCase
@@ -97,9 +94,10 @@
 		[expectation fulfill];
 	};
 	
-	XMPPHTTPFileUpload *xmppFileUpload = [[XMPPHTTPFileUpload alloc] initWithServiceName:@"upload.montague.tld"];
+    XMPPJID *serviceJID = [XMPPJID jidWithString:@"upload.montague.tld"];
+	XMPPHTTPFileUpload *xmppFileUpload = [[XMPPHTTPFileUpload alloc] init];
 	[xmppFileUpload activate:streamTest];
-	[xmppFileUpload requestSlotForFilename:@"my_juliet.png" size:23456 contentType:@"image/jpeg"];
+    [xmppFileUpload requestSlotFromService:serviceJID filename:@"my_juliet.png" size:23456 contentType:@"image/jpeg"];
 
 	[self waitForExpectationsWithTimeout:1 handler:^(NSError * _Nullable error) {
 		if(error){
@@ -114,7 +112,8 @@
 	self.slotResponseExpectation = [self expectationWithDescription:@"Slot Response"];
 
 	XMPPMockStream *streamTest = [[XMPPMockStream alloc] init];
-	XMPPHTTPFileUpload *xmppFileUpload = [[XMPPHTTPFileUpload alloc] initWithServiceName:@"upload.montague.tld"];
+    XMPPJID *serviceJID = [XMPPJID jidWithString:@"upload.montague.tld"];
+	XMPPHTTPFileUpload *xmppFileUpload = [[XMPPHTTPFileUpload alloc] init];
 	[xmppFileUpload activate:streamTest];
 	[xmppFileUpload addDelegate:self delegateQueue:dispatch_get_main_queue()];
 	
@@ -125,7 +124,7 @@
 		[weakStreamTest fakeIQResponse:iq];
 	};
 
-	[xmppFileUpload requestSlotForFilename:@"my_juliet.png" size:23456 contentType:@"image/jpeg"];
+	[xmppFileUpload requestSlotFromService:serviceJID filename:@"my_juliet.png" size:23456 contentType:@"image/jpeg"];
 	
 	[self waitForExpectationsWithTimeout:10 handler:^(NSError * _Nullable error) {
 		if(error){
@@ -138,7 +137,8 @@
 	self.slotResponseExpectation = [self expectationWithDescription:@"Slot Response"];
 	
 	XMPPMockStream *streamTest = [[XMPPMockStream alloc] init];
-	XMPPHTTPFileUpload *xmppFileUpload = [[XMPPHTTPFileUpload alloc] initWithServiceName:@"upload.montague.tld"];
+    XMPPJID *serviceJID = [XMPPJID jidWithString:@"upload.montague.tld"];
+	XMPPHTTPFileUpload *xmppFileUpload = [[XMPPHTTPFileUpload alloc] init];
 	[xmppFileUpload activate:streamTest];
 	[xmppFileUpload addDelegate:self delegateQueue:dispatch_get_main_queue()];
 	
@@ -149,7 +149,7 @@
 		[weakStreamTest fakeIQResponse:iq];
 	};
 	
-	[xmppFileUpload requestSlotForFilename:@"my_juliet.png" size:23456 contentType:@"image/jpeg"];
+    [xmppFileUpload requestSlotFromService:serviceJID filename:@"my_juliet.png" size:23456 contentType:@"image/jpeg"];
 	
 	[self waitForExpectationsWithTimeout:10 handler:^(NSError * _Nullable error) {
 		if(error){

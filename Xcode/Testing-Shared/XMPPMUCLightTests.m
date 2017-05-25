@@ -8,9 +8,6 @@
 
 #import <XCTest/XCTest.h>
 #import "XMPPMockStream.h"
-#import "XMPPMUCLight.h"
-#import "XMPPRoomLight.h"
-
 
 // This is a Mock class to make test run faster. We need a delay when we
 // are working over a real XMPPServer, but in tests it makes no sense to
@@ -135,7 +132,7 @@
 	}];
 }
 
-- (void) xmppMUCLight:(XMPPMUCLight *)sender didRequestBlockingList:(NSArray<DDXMLElement *> *)items forServiceNamed:(NSString *)serviceName{
+- (void) xmppMUCLight:(XMPPMUCLight *)sender didRequestBlockingList:(NSArray<NSXMLElement *> *)items forServiceNamed:(NSString *)serviceName{
 	XCTAssertEqual(items.count, 2);
 	XCTAssertEqualObjects(serviceName, @"muclight.test.com");
 	[self.delegateResponseExpectation fulfill];

@@ -7,7 +7,6 @@
 //
 
 #import "XMPPMockStream.h"
-#import "XMPPInternal.h"
 
 @implementation XMPPMockStream
 
@@ -20,6 +19,10 @@
 
 - (BOOL) isAuthenticated {
     return YES;
+}
+
+- (void)fakeResponse:(NSXMLElement*)element {
+    [self injectElement:element];
 }
 
 - (void)fakeMessageResponse:(XMPPMessage *) message {

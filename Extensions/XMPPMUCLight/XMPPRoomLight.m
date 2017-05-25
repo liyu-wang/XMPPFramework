@@ -6,7 +6,7 @@
 //  Copyright © 2016 Inaka. All rights reserved.
 //
 
-#import "XMPPFramework/XMPPMessage+XEP0045.h"
+#import "XMPPMessage+XEP0045.h"
 #import "XMPPRoomLight.h"
 
 static NSString *const XMPPRoomLightAffiliations = @"urn:xmpp:muclight:0#affiliations";
@@ -190,15 +190,15 @@ static NSString *const XMPPRoomLightDestroy = @"urn:xmpp:muclight:0#destroy";
 		NSXMLElement *configuration = [NSXMLElement elementWithName:@"configuration"];
 		[configuration addChild:[NSXMLElement elementWithName:@"roomname" stringValue:roomname]];
 		
-		NSXMLElement *ocupants = [NSXMLElement elementWithName:@"ocupants"];
+		NSXMLElement *occupants = [NSXMLElement elementWithName:@"occupants"];
 		for (XMPPJID *jid in members){
 			NSXMLElement *userElement = [NSXMLElement elementWithName:@"user" stringValue:jid.bare];
 			[userElement addAttributeWithName:@"affiliation" stringValue:@"member"];
-			[ocupants addChild:userElement];
+			[occupants addChild:userElement];
 		}
 		
 		[query addChild:configuration];
-		[query addChild:ocupants];
+		[query addChild:occupants];
 		
 		[iq addChild:query];
 		
